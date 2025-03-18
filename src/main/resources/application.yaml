@@ -1,0 +1,68 @@
+# HTTP server configuration
+quarkus:
+  http:
+    port: 8080
+    ssl-port: 8443
+
+    # # Logging configuration
+    # log:
+    #   category:
+    #     "org.acme":
+    #       level: INFO
+
+    # # Database configuration
+    # datasource:
+    #   db-kind: postgresql
+    #   username: your-username
+    #   password: your-password
+    #   jdbc:
+    #     url: jdbc:postgresql://localhost:5432/your-database
+
+    # # Hibernate ORM configuration
+    # hibernate-orm:
+    #   dialect: org.hibernate.dialect.PostgreSQLDialect
+    #   log:
+    #     sql: true
+    #     format_sql: true
+
+    # # Flyway configuration
+    # flyway:
+    #   migrate-at-start: true
+    #   locations: db/migration
+
+    # # Health check configuration
+    # health:
+    #   ui:
+    #     enabled: true
+    #     root-path: /health
+
+    # # OpenAPI configuration
+    # smallrye-openapi:
+    #   path: /openapi
+    #   info:
+    #     title: "Microservice API"
+    #     version: "1.0.0"
+
+    # # Metrics configuration
+    # metrics:
+    #   enabled: true
+    #   export:
+    #     prometheus:
+    #       enabled: true
+    #       path: /metrics
+    cors:
+      enabled: true
+  # # OIDC configuration
+  # oidc:
+  #   auth-server-url: https://auth.example.com
+  #   client-id: my-microservice
+  #   credentials:
+  #     secret: my-secret
+  #   token:
+  #     issuer: https://auth.example.com
+  #   application-type: service
+  #   authentication:
+  #     scopes:
+  #       - openid
+  #       - profile
+  #       - email
