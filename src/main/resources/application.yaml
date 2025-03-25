@@ -4,26 +4,31 @@ quarkus:
     port: 8080
     ssl-port: 8443
 
-    # # Logging configuration
-    # log:
-    #   category:
-    #     "org.acme":
-    #       level: INFO
+  # Logging configuration
+  log:
+    category:
+      "org.acme":
+        level: INFO
+      "io.quarkus":
+        level: INFO
 
-    # # Database configuration
-    # datasource:
-    #   db-kind: postgresql
-    #   username: your-username
-    #   password: your-password
-    #   jdbc:
-    #     url: jdbc:postgresql://localhost:5432/your-database
+  # Database configuration
+  datasource:
+    db-kind: h2
+    username: sa
+    password: sa
+    jdbc:
+      url: jdbc:h2:mem:dev;DB_CLOSE_DELAY=-1
+      max-size: 16
 
-    # # Hibernate ORM configuration
-    # hibernate-orm:
-    #   dialect: org.hibernate.dialect.PostgreSQLDialect
-    #   log:
-    #     sql: true
-    #     format_sql: true
+  # Hibernate ORM configuration
+  hibernate-orm:
+    database:
+      generation: drop-and-create
+    dialect: org.hibernate.dialect.H2Dialect
+    log:
+      sql: true
+      format_sql: true
 
     # # Flyway configuration
     # flyway:
@@ -51,7 +56,7 @@ quarkus:
     #       enabled: true
     #       path: /metrics
     cors:
-      enabled: true
+      enabled: false
   # # OIDC configuration
   # oidc:
   #   auth-server-url: https://auth.example.com
