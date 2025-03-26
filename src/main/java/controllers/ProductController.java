@@ -28,10 +28,18 @@ public class ProductController {
     }
 
     @GET
+    @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get a product by ID", description = "Get a product from the database by ID")
-    public Response getProductById(@NotNull @QueryParam("id") int id) {
+    public Response getProductById(@PathParam("id") int id) {
         Product product = productService.read(id);
         return Response.ok(product).build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Get all products", description = "Retrieve all products from the database")
+    public Response getAllProducts() {
+        return Response.ok(productService.readAll()).build();
     }
 }
