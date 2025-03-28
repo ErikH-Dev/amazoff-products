@@ -1,0 +1,92 @@
+@startuml entities
+' Define entities
+abstract class User {
+    + int oauthId
+    + int oauthProvider
+}
+
+class Buyer extends User {
+    + String firstName
+    + String lastName
+    + String email
+    + List<Address> addresses
+}
+
+class Vendor extends User {
+    + String storeName
+}
+
+class Admin extends User {
+    + String adminRole
+}
+
+class Address {
+    + int id
+    + User user
+    + String street
+    + String city
+    + String state
+    + String postalCode
+    + String country
+}
+
+class Product {
+    + int id
+    + String name
+    + Double price
+    + String description
+}
+
+class Order {
+    + int id
+    + User user
+    + List<OrderItem> orderItems
+    + OrderStatus status
+    + LocalDateTime orderDate
+}
+
+class OrderItem {
+    + int id
+    + Order order
+    + Product product
+    + int quantity
+    + double priceAtPurchase
+}
+
+class Payment {
+    + int id
+    + Order order
+    + String stripePaymentId
+    + Double amount
+    + PaymentStatus status
+    + LocalDateTime paymentDate
+}
+
+' Define enums
+
+enum OrderStatus {
+    PENDING
+    SHIPPED
+    DELIVERED
+    CANCELLED
+}
+
+enum PaymentStatus {
+    PENDING
+    COMPLETED
+    DECLINED
+}
+
+' Define relationships
+
+User "1" -- "0..*" Address : has
+User "1" -- "0..*" Order : places
+Order "1" -- "1..*" OrderItem : contains
+OrderItem "1" -- "1" Product : references
+Order "1" -- "1" Payment : paid by
+
+' Relationships between enums and entities
+Order "1" -- "1" OrderStatus : has status
+Payment "1" -- "1" PaymentStatus : has status
+
+@enduml

@@ -4,7 +4,6 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 
 import entities.Product;
 import interfaces.IProductService;
-import io.smallrye.common.constraint.NotNull;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Response;
@@ -41,5 +40,22 @@ public class ProductController {
     @Operation(summary = "Get all products", description = "Retrieve all products from the database")
     public Response getAllProducts() {
         return Response.ok(productService.readAll()).build();
+    }
+
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Update a product", description = "Update a product in the database")
+    public Response updateProduct(@Valid Product product) {
+        Product updatedProduct = productService.update(product);
+        return Response.ok(updatedProduct).build();
+    }
+
+    @DELETE
+    @Path("/{id}")
+    @Operation(summary = "Delete a product", description = "Delete a product from the database")
+    public Response deleteProduct(@PathParam("id") int id) {
+        productService.delete(id);
+        return Response.noContent().build();
     }
 }

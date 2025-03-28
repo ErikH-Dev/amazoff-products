@@ -5,6 +5,7 @@ import interfaces.IProductRepository;
 import interfaces.IProductService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -18,7 +19,7 @@ public class ProductService implements IProductService {
 
     @Override
     @Transactional
-    public Product create(Product product) {
+    public Product create(@Valid Product product) {
         return productRepository.create(product);
     }
 
@@ -30,5 +31,17 @@ public class ProductService implements IProductService {
     @Override
     public Product read(int id) {
         return productRepository.read(id);
+    }
+
+    @Override
+    @Transactional
+    public Product update(@Valid Product product) {
+        return productRepository.update(product);
+    }
+
+    @Override
+    @Transactional
+    public void delete(int id) {
+        productRepository.delete(id);
     }
 }
