@@ -2,6 +2,8 @@ package entities;
 
 import java.util.List;
 
+import jakarta.json.bind.annotation.JsonbCreator;
+import jakarta.json.bind.annotation.JsonbProperty;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -26,12 +28,18 @@ public class Buyer extends User {
     @Size(max = 100, message = "Email must not exceed 100 characters")
     private String email;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "userId", cascade = CascadeType.ALL)
     private List<Address> addresses;
 
-    public Buyer() {}
+    public Buyer() {
+    }
 
-    public Buyer(int oauthId, int oauthProvider, String firstName, String lastName, String email) {
+    @JsonbCreator
+    public Buyer(@JsonbProperty("oauthId") int oauthId,
+            @JsonbProperty("oauthProvider") int oauthProvider,
+            @JsonbProperty("firstName") String firstName,
+            @JsonbProperty("lastName") String lastName,
+            @JsonbProperty("email") String email) {
         super(oauthId, oauthProvider);
         this.firstName = firstName;
         this.lastName = lastName;

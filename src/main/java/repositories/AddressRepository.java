@@ -23,11 +23,19 @@ public class AddressRepository implements IAddressRepository {
         return address;
     }
 
-    //TODO: Change this method to get all addresses by userid.
     @Override
     public List<Address> readAllByUser(int userId) {
-        TypedQuery<Address> query = entityManager.createQuery("SELECT a FROM Address a WHERE", Address.class);
-        return query.getResultList();
+        TypedQuery<Address> query = entityManager.createQuery(
+            "SELECT a FROM Address a WHERE a.userId = :userId", Address.class
+        );
+        query.setParameter("userId", userId);
+        List<Address> addresses = query.getResultList();
+    
+        if (addresses.isEmpty()) {
+            throw new EntityNotFoundException("No addresses found for user with id: " + userId);
+        }
+    
+        return addresses;
     }
 
     @Override

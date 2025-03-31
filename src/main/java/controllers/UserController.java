@@ -30,8 +30,8 @@ public class UserController {
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get a user by ID", description = "Get a user from the database by ID")
-    public Response getUserById(@PathParam("id") int id) {
-        User user = userService.read(id);
+    public Response getUserById(@PathParam("id") int oauthId) {
+        User user = userService.read(oauthId);
         return Response.ok(user).build();
     }
 

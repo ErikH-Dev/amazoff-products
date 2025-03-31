@@ -8,6 +8,7 @@ import jakarta.validation.constraints.*;
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "user_type", discriminatorType = DiscriminatorType.STRING)
+@Table(name = "`User`")
 public abstract class User {
     @Id
     private int oauthId;

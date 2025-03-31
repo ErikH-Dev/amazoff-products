@@ -6,14 +6,16 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
 @Entity
+@Table(name = "addresses")
 public class Address {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    
     private int id;
 
-    @ManyToOne
-    @NotNull(message = "User must not be null")
-    private User user;
+    @NotNull(message = "User ID must not be null")
+    @Column(name = "user_id")
+    private int userId;
 
     @NotBlank(message = "Street must not be blank")
     @Size(max = 255, message = "Street must not exceed 255 characters")
@@ -29,6 +31,7 @@ public class Address {
 
     @NotBlank(message = "Postal code must not be blank")
     @Size(max = 20, message = "Postal code must not exceed 20 characters")
+    @Column(name = "postal_code")
     private String postalCode;
 
     @NotBlank(message = "Country must not be blank")
@@ -38,11 +41,11 @@ public class Address {
     public Address() {}
 
     @JsonbCreator
-    public Address(@JsonbProperty("id") int id, @JsonbProperty("user") User user, @JsonbProperty("street") String street,
+    public Address(@JsonbProperty("id") int id, @JsonbProperty("userId") int userId, @JsonbProperty("street") String street,
             @JsonbProperty("city") String city, @JsonbProperty("state") String state,
             @JsonbProperty("postalCode") String postalCode, @JsonbProperty("country") String country) {
         this.id = id;
-        this.user = user;
+        this.userId = userId;
         this.street = street;
         this.city = city;
         this.state = state;
@@ -53,27 +56,27 @@ public class Address {
     public int getId() {
         return id;
     }
-
-    public User getUser() {
-        return user;
+    
+    public int getUserId() {
+        return userId;
     }
-
+    
     public String getStreet() {
         return street;
     }
-
+    
     public String getCity() {
         return city;
     }
-
+    
     public String getState() {
         return state;
     }
-
+    
     public String getPostalCode() {
         return postalCode;
     }
-
+    
     public String getCountry() {
         return country;
     }

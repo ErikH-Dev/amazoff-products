@@ -3,12 +3,10 @@ package services;
 import java.util.List;
 
 import entities.Address;
-import entities.User;
 import interfaces.IAddressRepository;
 import interfaces.IAddressService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
 
 @ApplicationScoped
 public class AddressService implements IAddressService {
@@ -20,7 +18,7 @@ public class AddressService implements IAddressService {
 
     @Override
     @Transactional
-    public Address create(@Valid Address address) {
+    public Address create(Address address) {
         return addressRepository.create(address);
     }
 

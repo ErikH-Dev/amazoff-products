@@ -5,7 +5,6 @@ import interfaces.IUserRepository;
 import interfaces.IUserService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
 
 @ApplicationScoped
 public class UserService implements IUserService{
@@ -16,18 +15,18 @@ public class UserService implements IUserService{
     }
     @Override
     @Transactional
-    public User create(@Valid User user) {
+    public User create(User user) {
         return userRepository.create(user);
     }
 
     @Override
-    public User read(int id) {
-        return userRepository.read(id);
+    public User read(int oauthId) {
+        return userRepository.read(oauthId);
     }
 
     @Override
     @Transactional
-    public User update(@Valid User user) {
+    public User update(User user) {
         return userRepository.update(user);
     }
 

@@ -15,6 +15,7 @@ public class Payment {
     private int id;
 
     @OneToOne
+    @JoinColumn(name = "order_id", unique = false)
     @NotNull(message = "Order must not be null")
     private Order order;
 

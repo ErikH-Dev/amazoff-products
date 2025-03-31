@@ -26,7 +26,13 @@ public class ProductRepository implements IProductRepository {
     @Override
     public List<Product> readAll() {
         TypedQuery<Product> query = entityManager.createQuery("SELECT p FROM Product p", Product.class);
-        return query.getResultList();
+        List<Product> products = query.getResultList();
+
+        if (products.isEmpty()) {
+            throw new EntityNotFoundException("No addresses found");
+        }
+
+        return products;
     }
 
     @Override
@@ -45,22 +51,16 @@ public class ProductRepository implements IProductRepository {
             throw new EntityNotFoundException("Product not found with id: " + product.getId());
         }
 
-        if (!existingProduct.getClass().equals(product.getClass())) {
-            throw new IllegalArgumentException(
-                    "Product type mismatch: cannot update " + existingProduct.getClass().getSimpleName() +
-                            " with " + product.getClass().getSimpleName());
-        }
-
         return entityManager.merge(product);
     }
 
     @Override
     public void delete(int id) {
-        Product product = entityManager.find(Product.class, id);
-        if (product == null) {
+        Product existingProduct = entityManager.find(Product.class, id);
+        if (existingProduct == null) {
             throw new EntityNotFoundException("Product not found with id: " + id);
         }
-        entityManager.remove(product);
+        entityManager.remove(existingProduct);
     }
 
 }

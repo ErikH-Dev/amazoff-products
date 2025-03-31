@@ -8,7 +8,6 @@ import interfaces.IOrderRepository;
 import interfaces.IOrderService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
 
 @ApplicationScoped
 public class OrderService implements IOrderService {
@@ -20,7 +19,7 @@ public class OrderService implements IOrderService {
 
     @Override
     @Transactional
-    public Order create(@Valid Order order) {
+    public Order create(Order order) {
         return orderRepository.create(order);
     }
 

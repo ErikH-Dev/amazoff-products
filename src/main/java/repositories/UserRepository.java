@@ -7,7 +7,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
 
 @ApplicationScoped
 public class UserRepository implements IUserRepository {
@@ -16,7 +15,7 @@ public class UserRepository implements IUserRepository {
 
     @Override
     @Transactional
-    public User create(@Valid User user) {
+    public User create(User user) {
         entityManager.persist(user);
         entityManager.flush();
         entityManager.refresh(user);
@@ -24,16 +23,16 @@ public class UserRepository implements IUserRepository {
     }
 
     @Override
-    public User read(int id) {
-        User user = entityManager.find(User.class, id);
+    public User read(int oauthId) {
+        User user = entityManager.find(User.class, oauthId);
         if (user == null) {
-            throw new EntityNotFoundException("User not found with id: " + id);
+            throw new EntityNotFoundException("User not found with id: " + oauthId);
         }
         return user;
     }
 
     @Override
-    public User update(@Valid User user) {
+    public User update(User user) {
         User existingUser = entityManager.find(User.class, user.getOauthId());
         if (existingUser == null) {
             throw new EntityNotFoundException("User not found with id: " + user.getOauthId());

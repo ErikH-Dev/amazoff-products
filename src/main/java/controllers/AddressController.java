@@ -3,7 +3,6 @@ package controllers;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 
 import entities.Address;
-import entities.User;
 import interfaces.IAddressService;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
