@@ -24,15 +24,15 @@ public class AddressRepository implements IAddressRepository {
     }
 
     @Override
-    public List<Address> readAllByUser(int userId) {
+    public List<Address> readAllByUser(int oauthId) {
         TypedQuery<Address> query = entityManager.createQuery(
-            "SELECT a FROM Address a WHERE a.userId = :userId", Address.class
+            "SELECT a FROM Address a WHERE a.oauthId = :oauthId", Address.class
         );
-        query.setParameter("userId", userId);
+        query.setParameter("oauthId", oauthId);
         List<Address> addresses = query.getResultList();
     
         if (addresses.isEmpty()) {
-            throw new EntityNotFoundException("No addresses found for user with id: " + userId);
+            throw new EntityNotFoundException("No addresses found for user with id: " + oauthId);
         }
     
         return addresses;

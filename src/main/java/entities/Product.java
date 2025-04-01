@@ -31,6 +31,12 @@ public class Product {
 
     public Product() {}
 
+    public Product(String name, Double price, String description) {
+        this.name = name;
+        this.price = price;
+        this.description = description;
+    }
+
     @JsonbCreator
     public Product(@JsonbProperty("id") int id, @JsonbProperty("name") String name, @JsonbProperty("price") Double price, @JsonbProperty("description") String description) {
         this.id = id;

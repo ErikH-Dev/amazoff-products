@@ -30,8 +30,8 @@ public class AddressController {
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get all addresses", description = "Retrieve all addresses from the database")
-    public Response getAllAddressesByUser(@PathParam("id") int userId) {
-        return Response.ok(addressService.readAllByUser(userId)).build();
+    public Response getAllAddressesByUser(@PathParam("id") int oauthId) {
+        return Response.ok(addressService.readAllByUser(oauthId)).build();
     }
 
     @PUT

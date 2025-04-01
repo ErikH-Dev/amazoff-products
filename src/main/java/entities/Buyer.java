@@ -1,19 +1,19 @@
 package entities;
 
-import java.util.List;
-
 import jakarta.json.bind.annotation.JsonbCreator;
 import jakarta.json.bind.annotation.JsonbProperty;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrimaryKeyJoinColumn;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 @Entity
+@Table(name = "BUYER")
 @DiscriminatorValue("BUYER")
+@PrimaryKeyJoinColumn(name = "oauthId")
 public class Buyer extends User {
     @NotBlank(message = "First name must not be blank")
     @Size(max = 100, message = "First name must not exceed 100 characters")
@@ -27,9 +27,6 @@ public class Buyer extends User {
     @Email(message = "Email must be a valid email address")
     @Size(max = 100, message = "Email must not exceed 100 characters")
     private String email;
-
-    @OneToMany(mappedBy = "userId", cascade = CascadeType.ALL)
-    private List<Address> addresses;
 
     public Buyer() {
     }

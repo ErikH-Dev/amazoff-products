@@ -7,29 +7,15 @@ import entities.Product;
 import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest
-public class ProductControllerTest {
+class ProductControllerTest {
 
-    private Product createValidProduct() {
-        return new Product(
-            1,
+    @Test
+    void addProduct_shouldReturnCreatedProduct_whenProductIsValid() {
+        Product product = new Product(
             "Laptop",
             1200.00,
             "High-performance laptop"
         );
-    }
-
-    private Product createInvalidProduct() {
-        return new Product(
-            0,
-            "",
-            -1200.00,
-            ""
-        );
-    }
-
-    @Test
-    void addProduct_shouldReturnCreatedProduct_whenProductIsValid() {
-        Product product = createValidProduct();
 
         given()
             .contentType("application/json")
@@ -42,7 +28,11 @@ public class ProductControllerTest {
 
     @Test
     void addProduct_shouldReturnBadRequest_whenProductIsInvalid() {
-        Product product = createInvalidProduct();
+        Product product = new Product(
+            "",
+            -1200.00,
+            ""
+        );
 
         given()
             .contentType("application/json")
@@ -55,7 +45,7 @@ public class ProductControllerTest {
 
     @Test
     void getProductById_shouldReturnProduct_whenProductExists() {
-        int productId = 1; // Assuming this product ID exists
+        int productId = 101; // Assuming this product ID exists
 
         given()
             .pathParam("id", productId)
@@ -79,7 +69,12 @@ public class ProductControllerTest {
 
     @Test
     void updateProduct_shouldReturnUpdatedProduct_whenProductIsValid() {
-        Product product = createValidProduct();
+        Product product = new Product(
+            101, // Assuming this product ID exists
+            "Laptop",
+            1200.00,
+            "High-performance laptop"
+        );
 
         given()
             .contentType("application/json")
@@ -92,7 +87,12 @@ public class ProductControllerTest {
 
     @Test
     void updateProduct_shouldReturnBadRequest_whenProductIsInvalid() {
-        Product product = createInvalidProduct();
+        Product product = new Product(
+            9999, // Assuming this product ID does not exist
+            "",
+            -1200.00,
+            ""
+        );
 
         given()
             .contentType("application/json")
@@ -105,7 +105,7 @@ public class ProductControllerTest {
 
     @Test
     void deleteProduct_shouldReturnNoContent_whenProductExists() {
-        int productId = 2; // Assuming this product ID exists
+        int productId = 102; // Assuming this product ID exists
 
         given()
             .pathParam("id", productId)

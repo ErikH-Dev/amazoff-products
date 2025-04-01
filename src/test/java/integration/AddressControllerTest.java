@@ -7,35 +7,18 @@ import entities.Address;
 import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest
-public class AddressControllerTest {
+class AddressControllerTest {
 
-    private Address createValidAddress() {
-        return new Address(
-            1,
-            1,
+    @Test
+    void addAddress_shouldReturnCreatedAddress_whenAddressIsValid() {
+        Address address = new Address(
+            101,
             "Damrak 1",
             "Amsterdam",
             "Noord-Holland",
             "1012LG",
             "Netherlands"
         );
-    }
-
-    private Address createInvalidAddress() {
-        return new Address(
-            1,
-            1,
-            "",
-            "",
-            "",
-            "",
-            ""
-        );
-    }
-
-    @Test
-    void addAddress_shouldReturnCreatedAddress_whenAddressIsValid() {
-        Address address = createValidAddress();
 
         given()
             .contentType("application/json")
@@ -48,7 +31,14 @@ public class AddressControllerTest {
 
     @Test
     void addAddress_shouldReturnBadRequest_whenAddressIsInvalid() {
-        Address address = createInvalidAddress();
+        Address address = new Address(
+            101,
+            "",
+            "",
+            "",
+            "",
+            ""
+        );
 
         given()
             .contentType("application/json")
@@ -61,10 +51,10 @@ public class AddressControllerTest {
 
     @Test
     void getAllAddressesByUser_shouldReturnAddresses_whenUserExists() {
-        int userId = 1; // Assuming this user ID exists
+        int oauthId = 101; // Assuming this user ID exists
 
         given()
-            .pathParam("id", userId)
+            .pathParam("id", oauthId)
         .when()
             .get("/addresses/{id}")
         .then()
@@ -73,10 +63,10 @@ public class AddressControllerTest {
 
     @Test
     void getAllAddressesByUser_shouldReturnNotFound_whenUserDoesNotExist() {
-        int userId = 9999; // Assuming this user ID does not exist
+        int oauthId = 9999; // Assuming this user ID does not exist
 
         given()
-            .pathParam("id", userId)
+            .pathParam("id", oauthId)
         .when()
             .get("/addresses/{id}")
         .then()
@@ -85,7 +75,15 @@ public class AddressControllerTest {
 
     @Test
     void updateAddress_shouldReturnUpdatedAddress_whenAddressIsValid() {
-        Address address = createValidAddress();
+        Address address = new Address(
+            101,
+            101,
+            "Damrak 1",
+            "Amsterdam",
+            "Noord-Holland",
+            "1012LG",
+            "Netherlands"
+        );
 
         given()
             .contentType("application/json")
@@ -98,7 +96,15 @@ public class AddressControllerTest {
 
     @Test
     void updateAddress_shouldReturnBadRequest_whenAddressIsInvalid() {
-        Address address = createInvalidAddress();
+        Address address = new Address(
+            101,
+            101,
+            "",
+            "",
+            "",
+            "",
+            ""
+        );
 
         given()
             .contentType("application/json")
@@ -111,7 +117,7 @@ public class AddressControllerTest {
 
     @Test
     void deleteAddress_shouldReturnNoContent_whenAddressExists() {
-        int addressId = 1; // Assuming this address ID exists
+        int addressId = 101; // Assuming this address ID exists
 
         given()
             .pathParam("id", addressId)

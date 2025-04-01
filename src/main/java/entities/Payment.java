@@ -36,6 +36,14 @@ public class Payment {
     public Payment() {
     }
 
+    public Payment(Order order, String stripePaymentId, Double amount, PaymentStatus status, LocalDateTime paymentDate) {
+        this.order = order;
+        this.stripePaymentId = stripePaymentId;
+        this.amount = amount;
+        this.status = status;
+        this.paymentDate = paymentDate;
+    }
+
     @JsonbCreator
     public Payment(@JsonbProperty("id") int id, @JsonbProperty("order") Order order,
             @JsonbProperty("stripePaymentId") String stripePaymentId, @JsonbProperty("amount") Double amount,

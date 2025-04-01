@@ -23,8 +23,8 @@ public class AddressService implements IAddressService {
     }
 
     @Override
-    public List<Address> readAllByUser(int userId) {
-        return addressRepository.readAllByUser(userId);
+    public List<Address> readAllByUser(int oauthId) {
+        return addressRepository.readAllByUser(oauthId);
     }
 
     @Override

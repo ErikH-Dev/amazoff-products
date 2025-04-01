@@ -10,12 +10,11 @@ import jakarta.validation.constraints.*;
 public class Address {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    
     private int id;
 
     @NotNull(message = "User ID must not be null")
-    @Column(name = "user_id")
-    private int userId;
+    @Column(name = "oauthId")
+    private int oauthId;
 
     @NotBlank(message = "Street must not be blank")
     @Size(max = 255, message = "Street must not exceed 255 characters")
@@ -40,12 +39,21 @@ public class Address {
 
     public Address() {}
 
+    public Address(int oauthId, String street, String city, String state, String postalCode, String country) {
+        this.oauthId = oauthId;
+        this.street = street;
+        this.city = city;
+        this.state = state;
+        this.postalCode = postalCode;
+        this.country = country;
+    }
+
     @JsonbCreator
-    public Address(@JsonbProperty("id") int id, @JsonbProperty("userId") int userId, @JsonbProperty("street") String street,
+    public Address(@JsonbProperty("id") int id, @JsonbProperty("oauthId") int oauthId, @JsonbProperty("street") String street,
             @JsonbProperty("city") String city, @JsonbProperty("state") String state,
             @JsonbProperty("postalCode") String postalCode, @JsonbProperty("country") String country) {
         this.id = id;
-        this.userId = userId;
+        this.oauthId = oauthId;
         this.street = street;
         this.city = city;
         this.state = state;
@@ -57,8 +65,8 @@ public class Address {
         return id;
     }
     
-    public int getUserId() {
-        return userId;
+    public int getOauthId() {
+        return oauthId;
     }
     
     public String getStreet() {
