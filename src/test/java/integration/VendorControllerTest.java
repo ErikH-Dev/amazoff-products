@@ -1,5 +1,7 @@
 package integration;
 
+import io.quarkus.test.TestTransaction;
+
 import org.junit.jupiter.api.Test;
 import static io.restassured.RestAssured.given;
 
@@ -10,6 +12,7 @@ import io.quarkus.test.junit.QuarkusTest;
 class VendorControllerTest {
 
     @Test
+    @TestTransaction
     void addVendor_shouldReturnCreatedVendor_whenVendorIsValid() {
         Vendor vendor = new Vendor(
             1,
@@ -27,6 +30,7 @@ class VendorControllerTest {
     }
 
     @Test
+    @TestTransaction
     void addVendor_shouldReturnBadRequest_whenVendorIsInvalid() {
         Vendor vendor = new Vendor(
             1,
@@ -44,6 +48,7 @@ class VendorControllerTest {
     }
 
     @Test
+    @TestTransaction
     void getVendorById_shouldReturnVendor_whenVendorExists() {
         int oauthId = 104; // Assuming this vendor ID exists
 
@@ -56,6 +61,7 @@ class VendorControllerTest {
     }
 
     @Test
+    @TestTransaction
     void getVendorById_shouldReturnNotFound_whenVendorDoesNotExist() {
         int oauthId = 9999; // Assuming this vendor ID does not exist
 
@@ -68,6 +74,7 @@ class VendorControllerTest {
     }
 
     @Test
+    @TestTransaction
     void updateVendor_shouldReturnUpdatedVendor_whenVendorIsValid() {
         Vendor vendor = new Vendor(
             104,
@@ -85,6 +92,7 @@ class VendorControllerTest {
     }
 
     @Test
+    @TestTransaction
     void updateVendor_shouldReturnBadRequest_whenVendorIsInvalid() {
         Vendor vendor = new Vendor(
             104,
@@ -102,6 +110,7 @@ class VendorControllerTest {
     }
 
     @Test
+    @TestTransaction
     void deleteVendor_shouldReturnNoContent_whenVendorExists() {
         int oauthId = 103; // Assuming this vendor ID exists
 
@@ -114,6 +123,7 @@ class VendorControllerTest {
     }
 
     @Test
+    @TestTransaction
     void deleteVendor_shouldReturnNotFound_whenVendorDoesNotExist() {
         int oauthId = 9999; // Assuming this vendor ID does not exist
 

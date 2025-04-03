@@ -14,9 +14,8 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @OneToOne
-    @JoinColumn(name = "order_id", unique = false)
-    @NotNull(message = "Order must not be null")
+    @ManyToOne
+    @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
     @NotBlank(message = "Stripe payment ID must not be blank")
@@ -46,8 +45,8 @@ public class Payment {
 
     @JsonbCreator
     public Payment(@JsonbProperty("id") int id, @JsonbProperty("order") Order order,
-            @JsonbProperty("stripePaymentId") String stripePaymentId, @JsonbProperty("amount") Double amount,
-            @JsonbProperty("status") PaymentStatus status, @JsonbProperty("paymentDate") LocalDateTime paymentDate) {
+                   @JsonbProperty("stripePaymentId") String stripePaymentId, @JsonbProperty("amount") Double amount,
+                   @JsonbProperty("status") PaymentStatus status, @JsonbProperty("paymentDate") LocalDateTime paymentDate) {
         this.id = id;
         this.order = order;
         this.stripePaymentId = stripePaymentId;

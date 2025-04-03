@@ -1,11 +1,13 @@
 package entities;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import enums.OrderStatus;
 import jakarta.json.bind.annotation.JsonbCreator;
 import jakarta.json.bind.annotation.JsonbProperty;
+import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
@@ -16,13 +18,10 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @ManyToOne
-    @NotNull(message = "User must not be null")
-    private User user;
-
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @NotEmpty(message = "Order must contain at least one order item")
-    private List<OrderItem> orderItems;
+    @JsonbTransient
+    private List<OrderItem> orderItems = new ArrayList<>();
 
     @NotNull(message = "Order status must not be null")
     @Enumerated(EnumType.STRING)
@@ -31,14 +30,30 @@ public class Order {
     @NotNull(message = "Order date must not be null")
     private LocalDateTime orderDate;
 
-    public Order() {}
+    @ManyToOne
+    @JoinColumn(name = "oauthId", nullable = false)
+    @JsonbTransient
+    private Buyer buyer;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Payment> payments = new ArrayList<>();
+
+    public Order() {
+    }
+
+    public Order(Buyer buyer, List<OrderItem> orderItems, OrderStatus status, LocalDateTime orderDate) {
+        this.buyer = buyer;
+        this.orderItems = orderItems;
+        this.status = status;
+        this.orderDate = orderDate;
+    }
 
     @JsonbCreator
-    public Order(@JsonbProperty("id") int id, @JsonbProperty("user") User user,
+    public Order(@JsonbProperty("id") int id, @JsonbProperty("buyer") Buyer buyer,
             @JsonbProperty("orderItems") List<OrderItem> orderItems, @JsonbProperty("status") OrderStatus status,
             @JsonbProperty("orderDate") LocalDateTime orderDate) {
         this.id = id;
-        this.user = user;
+        this.buyer = buyer;
         this.orderItems = orderItems;
         this.status = status;
         this.orderDate = orderDate;
@@ -46,10 +61,6 @@ public class Order {
 
     public int getId() {
         return id;
-    }
-
-    public User getUser() {
-        return user;
     }
 
     public List<OrderItem> getOrderItems() {
@@ -66,5 +77,9 @@ public class Order {
 
     public LocalDateTime getOrderDate() {
         return orderDate;
+    }
+
+    public Buyer getBuyer() {
+        return buyer;
     }
 }

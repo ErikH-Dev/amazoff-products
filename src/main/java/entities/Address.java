@@ -12,9 +12,9 @@ public class Address {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @NotNull(message = "User ID must not be null")
-    @Column(name = "oauthId")
-    private int oauthId;
+    @ManyToOne
+    @JoinColumn(name = "oauthId", nullable = false)
+    private Buyer buyer;
 
     @NotBlank(message = "Street must not be blank")
     @Size(max = 255, message = "Street must not exceed 255 characters")
@@ -39,8 +39,16 @@ public class Address {
 
     public Address() {}
 
-    public Address(int oauthId, String street, String city, String state, String postalCode, String country) {
-        this.oauthId = oauthId;
+    public Address(int id, String street, String city, String state, String postalCode, String country) {
+        this.id = id;
+        this.street = street;
+        this.city = city;
+        this.state = state;
+        this.postalCode = postalCode;
+        this.country = country;
+    }
+
+    public Address(String street, String city, String state, String postalCode, String country) {
         this.street = street;
         this.city = city;
         this.state = state;
@@ -49,11 +57,11 @@ public class Address {
     }
 
     @JsonbCreator
-    public Address(@JsonbProperty("id") int id, @JsonbProperty("oauthId") int oauthId, @JsonbProperty("street") String street,
+    public Address(@JsonbProperty("id") int id, @JsonbProperty("buyer") Buyer buyer, @JsonbProperty("street") String street,
             @JsonbProperty("city") String city, @JsonbProperty("state") String state,
             @JsonbProperty("postalCode") String postalCode, @JsonbProperty("country") String country) {
         this.id = id;
-        this.oauthId = oauthId;
+        this.buyer = buyer;
         this.street = street;
         this.city = city;
         this.state = state;
@@ -64,9 +72,13 @@ public class Address {
     public int getId() {
         return id;
     }
+
+    public void setBuyer(Buyer buyer) {
+        this.buyer = buyer;
+    }
     
-    public int getOauthId() {
-        return oauthId;
+    public Buyer getBuyer() {
+        return buyer;
     }
     
     public String getStreet() {

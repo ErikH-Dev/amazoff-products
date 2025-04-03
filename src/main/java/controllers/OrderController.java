@@ -1,18 +1,22 @@
 package controllers;
 
+import java.util.List;
+
 import org.eclipse.microprofile.openapi.annotations.Operation;
 
+import dto.OrderRequest;
 import entities.Order;
 import enums.OrderStatus;
 import interfaces.IOrderService;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Response;
+import utils.OrderStatusUtils;
 import jakarta.ws.rs.core.MediaType;
 
 @Path("/orders")
 public class OrderController {
-    private IOrderService orderService;
+    private final IOrderService orderService;
 
     public OrderController(IOrderService orderService) {
         this.orderService = orderService;
@@ -21,9 +25,9 @@ public class OrderController {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Add an order", description = "Add an order to the database")
-    public Response addOrder(@Valid Order order) {
-        Order createdOrder = orderService.create(order);
+    @Operation(summary = "Create an order", description = "Create a new order for a buyer")
+    public Response createOrder(@Valid OrderRequest orderRequest) {
+        Order createdOrder = orderService.create(orderRequest);
         return Response.ok(createdOrder).build();
     }
 
@@ -37,18 +41,22 @@ public class OrderController {
     }
 
     @GET
+    @Path("/user/{oauthId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Get all orders", description = "Retrieve all orders from the database")
-    public Response getAllOrders() {
-        return Response.ok(orderService.readAll()).build();
+    @Operation(summary = "Get all orders by user ID", description = "Retrieve all buyer orders from the database")
+    public Response getAllOrdersByUser(@PathParam("oauthId") int oauthId) {
+        List<Order> orders = orderService.readAllByUser(oauthId);
+        return Response.ok(orders).build();
     }
 
     @PUT
+    @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Update order status", description = "Update the status of an order in the database")
-    public Response updateOrder(@PathParam("id") int id, OrderStatus orderStatus) {
-        Order updatedOrder = orderService.updateOrderStatus(id, orderStatus);
+    public Response updateOrderStatus(@PathParam("id") int id, String orderStatus) {
+        OrderStatus status = OrderStatusUtils.fromString(orderStatus);
+        Order updatedOrder = orderService.updateOrderStatus(id, status);
         return Response.ok(updatedOrder).build();
     }
 

@@ -27,30 +27,21 @@ public class OrderRepository implements IOrderRepository {
     public Order read(int id) {
         Order order = entityManager.find(Order.class, id);
         if (order == null) {
-            throw new EntityNotFoundException("Order not found with id: " + id);
+            throw new EntityNotFoundException("Order not found with ID: " + id);
         }
         return order;
     }
 
     @Override
-    public List<Order> readAll() {
-        TypedQuery<Order> query = entityManager.createQuery("SELECT o FROM Order o", Order.class);
+    public List<Order> readAllByUser(int oauthId) {
+        TypedQuery<Order> query = entityManager.createQuery(
+            "SELECT o FROM Order o WHERE o.buyer.oauthId = :oauthId", Order.class);
+        query.setParameter("oauthId", oauthId);
         return query.getResultList();
     }
 
     @Override
     public Order update(Order order) {
-        Order existingOrder = entityManager.find(Order.class, order.getId());
-        if (existingOrder == null) {
-            throw new EntityNotFoundException("Order not found with id: " + order.getId());
-        }
-
-        if (!existingOrder.getClass().equals(order.getClass())) {
-            throw new IllegalArgumentException(
-                    "Order type mismatch: cannot update " + existingOrder.getClass().getSimpleName() +
-                            " with " + order.getClass().getSimpleName());
-        }
-
         return entityManager.merge(order);
     }
 
@@ -58,7 +49,7 @@ public class OrderRepository implements IOrderRepository {
     public void delete(int id) {
         Order order = entityManager.find(Order.class, id);
         if (order == null) {
-            throw new EntityNotFoundException("Order not found with id: " + id);
+            throw new EntityNotFoundException("Order not found with ID: " + id);
         }
         entityManager.remove(order);
     }

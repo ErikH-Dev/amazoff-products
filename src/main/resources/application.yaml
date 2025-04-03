@@ -28,9 +28,7 @@ quarkus:
     database:
       generation: drop-and-create
     dialect: org.hibernate.dialect.H2Dialect
-    log:
-      sql: true
-      format_sql: true
+    # sql-load-script: import.sql    
 
     # # Flyway configuration
     # flyway:

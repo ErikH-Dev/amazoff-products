@@ -6,11 +6,13 @@ import static io.restassured.RestAssured.given;
 
 import entities.Buyer;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.TestTransaction;
 
 @QuarkusTest
 class BuyerControllerTest {
 
     @Test
+    @TestTransaction
     void addBuyer_shouldReturnCreatedBuyer_whenBuyerIsValid() {
         Buyer buyer = new Buyer(
             1,
@@ -30,6 +32,7 @@ class BuyerControllerTest {
     }
 
     @Test
+    @TestTransaction
     void addBuyer_shouldReturnBadRequest_whenBuyerIsInvalid() {
         Buyer buyer = new Buyer(
             1,
@@ -49,6 +52,7 @@ class BuyerControllerTest {
     }
 
     @Test
+    @TestTransaction
     void getBuyerById_shouldReturnBuyer_whenBuyerExists() {
         int oauthId = 102; // Assuming this buyer ID exists
 
@@ -61,6 +65,7 @@ class BuyerControllerTest {
     }
 
     @Test
+    @TestTransaction
     void getBuyerById_shouldReturnNotFound_whenBuyerDoesNotExist() {
         int oauthId = 9999; // Assuming this buyer ID does not exist
 
@@ -73,6 +78,7 @@ class BuyerControllerTest {
     }
 
     @Test
+    @TestTransaction
     void updateBuyer_shouldReturnUpdatedBuyer_whenBuyerIsValid() {
         Buyer buyer = new Buyer(
             102,
@@ -92,6 +98,7 @@ class BuyerControllerTest {
     }
 
     @Test
+    @TestTransaction
     void updateBuyer_shouldReturnBadRequest_whenBuyerIsInvalid() {
         Buyer buyer = new Buyer(
             101,
@@ -111,6 +118,7 @@ class BuyerControllerTest {
     }
 
     @Test
+    @TestTransaction
     void deleteBuyer_shouldReturnNoContent_whenBuyerExists() {
         int oauthId = 101; // Assuming this buyer ID exists
 
@@ -123,6 +131,7 @@ class BuyerControllerTest {
     }
 
     @Test
+    @TestTransaction
     void deleteBuyer_shouldReturnNotFound_whenBuyerDoesNotExist() {
         int oauthId = 9999; // Assuming this buyer ID does not exist
 

@@ -7,7 +7,7 @@ import entities.Order;
 public interface IOrderRepository {
     Order create(Order order);
     Order read(int id);
-    List<Order> readAll();
+    List<Order> readAllByUser(int oauthId);
     Order update(Order order);
     void delete(int id);
 }

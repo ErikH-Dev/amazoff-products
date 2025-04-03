@@ -21,16 +21,16 @@ public class AddressController {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Add an address", description = "Add an address to the database")
-    public Response addAddress(@Valid Address address) {
-        Address createdAddress = addressService.create(address);
+    public Response addAddress(@QueryParam("oauthId") int oauthId, @Valid Address address) {
+        Address createdAddress = addressService.create(oauthId, address);
         return Response.ok(createdAddress).build();
     }
 
     @GET
-    @Path("/{id}")
+    @Path("/{oauthId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Get all addresses", description = "Retrieve all addresses from the database")
-    public Response getAllAddressesByUser(@PathParam("id") int oauthId) {
+    @Operation(summary = "Get all addresses", description = "Retrieve all addresses for a user")
+    public Response getAllAddressesByUser(@PathParam("oauthId") int oauthId) {
         return Response.ok(addressService.readAllByUser(oauthId)).build();
     }
 
@@ -38,8 +38,8 @@ public class AddressController {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Update an address", description = "Update an address in the database")
-    public Response updateAddress(@Valid Address address) {
-        Address updatedAddress = addressService.update(address);
+    public Response updateAddress(@QueryParam("oauthId") int oauthId, @Valid Address address) {
+        Address updatedAddress = addressService.update(oauthId, address);
         return Response.ok(updatedAddress).build();
     }
 

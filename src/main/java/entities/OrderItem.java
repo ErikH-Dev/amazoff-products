@@ -2,6 +2,7 @@ package entities;
 
 import jakarta.json.bind.annotation.JsonbCreator;
 import jakarta.json.bind.annotation.JsonbProperty;
+import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
@@ -12,12 +13,18 @@ public class OrderItem {
     private int id;
 
     @ManyToOne
-    @NotNull
+    @JoinColumn(name = "order_id", referencedColumnName = "id", nullable = false)
+    @JsonbTransient
     private Order order;
 
-    @ManyToOne
     @NotNull
-    private Product product;
+    private String productName;
+
+    @NotNull
+    private double productPrice;
+
+    @NotNull
+    private String productDescription;
 
     @NotNull
     private int quantity;
@@ -27,13 +34,25 @@ public class OrderItem {
 
     public OrderItem() {}
 
+    public OrderItem(Order order, String productName, double productPrice, String productDescription, int quantity, double priceAtPurchase) {
+        this.order = order;
+        this.productName = productName;
+        this.productPrice = productPrice;
+        this.productDescription = productDescription;
+        this.quantity = quantity;
+        this.priceAtPurchase = priceAtPurchase;
+    }
+
     @JsonbCreator
     public OrderItem(@JsonbProperty("id") int id, @JsonbProperty("order") Order order,
-            @JsonbProperty("product") Product product, @JsonbProperty("quantity") int quantity,
-            @JsonbProperty("priceAtPurchase") double priceAtPurchase) {
+                     @JsonbProperty("productName") String productName, @JsonbProperty("productPrice") double productPrice,
+                     @JsonbProperty("productDescription") String productDescription, @JsonbProperty("quantity") int quantity,
+                     @JsonbProperty("priceAtPurchase") double priceAtPurchase) {
         this.id = id;
         this.order = order;
-        this.product = product;
+        this.productName = productName;
+        this.productPrice = productPrice;
+        this.productDescription = productDescription;
         this.quantity = quantity;
         this.priceAtPurchase = priceAtPurchase;
     }
@@ -46,8 +65,16 @@ public class OrderItem {
         return order;
     }
 
-    public Product getProduct() {
-        return product;
+    public String getProductName() {
+        return productName;
+    }
+
+    public double getProductPrice() {
+        return productPrice;
+    }
+
+    public String getProductDescription() {
+        return productDescription;
     }
 
     public int getQuantity() {
@@ -56,5 +83,9 @@ public class OrderItem {
 
     public double getPriceAtPurchase() {
         return priceAtPurchase;
+    }
+
+    public void setOrder(Order order) {
+        this.order = order;
     }
 }

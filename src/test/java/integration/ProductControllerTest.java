@@ -1,5 +1,7 @@
 package integration;
 
+import io.quarkus.test.TestTransaction;
+
 import org.junit.jupiter.api.Test;
 import static io.restassured.RestAssured.given;
 
@@ -10,6 +12,7 @@ import io.quarkus.test.junit.QuarkusTest;
 class ProductControllerTest {
 
     @Test
+    @TestTransaction
     void addProduct_shouldReturnCreatedProduct_whenProductIsValid() {
         Product product = new Product(
             "Laptop",
@@ -18,6 +21,7 @@ class ProductControllerTest {
         );
 
         given()
+            .queryParam("oauthId", 103) // Existing vendor ID (oauthId) from import.sql
             .contentType("application/json")
             .body(product)
         .when()
@@ -27,6 +31,7 @@ class ProductControllerTest {
     }
 
     @Test
+    @TestTransaction
     void addProduct_shouldReturnBadRequest_whenProductIsInvalid() {
         Product product = new Product(
             "",
@@ -35,6 +40,7 @@ class ProductControllerTest {
         );
 
         given()
+            .queryParam("oauthId", 103) // Existing vendor ID (oauthId) from import.sql
             .contentType("application/json")
             .body(product)
         .when()
@@ -44,8 +50,9 @@ class ProductControllerTest {
     }
 
     @Test
+    @TestTransaction
     void getProductById_shouldReturnProduct_whenProductExists() {
-        int productId = 101; // Assuming this product ID exists
+        int productId = 302; // Assuming this product ID exists
 
         given()
             .pathParam("id", productId)
@@ -56,6 +63,7 @@ class ProductControllerTest {
     }
 
     @Test
+    @TestTransaction
     void getProductById_shouldReturnNotFound_whenProductDoesNotExist() {
         int productId = 9999; // Assuming this product ID does not exist
 
@@ -68,15 +76,17 @@ class ProductControllerTest {
     }
 
     @Test
+    @TestTransaction
     void updateProduct_shouldReturnUpdatedProduct_whenProductIsValid() {
         Product product = new Product(
-            101, // Assuming this product ID exists
+            301, // Assuming this product ID exists
             "Laptop",
             1200.00,
             "High-performance laptop"
         );
 
         given()
+            .queryParam("oauthId", 103) // Existing vendor ID (oauthId) from import.sql
             .contentType("application/json")
             .body(product)
         .when()
@@ -86,6 +96,7 @@ class ProductControllerTest {
     }
 
     @Test
+    @TestTransaction
     void updateProduct_shouldReturnBadRequest_whenProductIsInvalid() {
         Product product = new Product(
             9999, // Assuming this product ID does not exist
@@ -95,6 +106,7 @@ class ProductControllerTest {
         );
 
         given()
+            .queryParam("oauthId", 103) // Existing vendor ID (oauthId) from import.sql
             .contentType("application/json")
             .body(product)
         .when()
@@ -104,8 +116,9 @@ class ProductControllerTest {
     }
 
     @Test
+    @TestTransaction
     void deleteProduct_shouldReturnNoContent_whenProductExists() {
-        int productId = 102; // Assuming this product ID exists
+        int productId = 301; // Assuming this product ID exists
 
         given()
             .pathParam("id", productId)
@@ -116,6 +129,7 @@ class ProductControllerTest {
     }
 
     @Test
+    @TestTransaction
     void deleteProduct_shouldReturnNotFound_whenProductDoesNotExist() {
         int productId = 9999; // Assuming this product ID does not exist
 

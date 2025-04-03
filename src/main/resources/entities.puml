@@ -32,6 +32,7 @@ class Address {
 
 class Product {
     + int id
+    + Vendor vendor
     + String name
     + Double price
     + String description

@@ -21,8 +21,8 @@ public class ProductController {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Add a product", description = "Add a product to the database")
-    public Response addProduct(@Valid Product product) {
-        Product createdProduct = productService.create(product);
+    public Response addProduct(@QueryParam("oauthId") int oauthId, @Valid Product product) {
+        Product createdProduct = productService.create(oauthId, product);
         return Response.ok(createdProduct).build();
     }
 
@@ -46,8 +46,8 @@ public class ProductController {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Update a product", description = "Update a product in the database")
-    public Response updateProduct(@Valid Product product) {
-        Product updatedProduct = productService.update(product);
+    public Response updateProduct(@QueryParam("oauthId") int oauthId, @Valid Product product) {
+        Product updatedProduct = productService.update(oauthId, product);
         return Response.ok(updatedProduct).build();
     }
 
