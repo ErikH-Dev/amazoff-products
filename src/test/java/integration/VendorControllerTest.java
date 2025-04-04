@@ -15,7 +15,7 @@ class VendorControllerTest {
     @TestTransaction
     void addVendor_shouldReturnCreatedVendor_whenVendorIsValid() {
         Vendor vendor = new Vendor(
-            1,
+            107,
             102,
             "Tech Store"
         );

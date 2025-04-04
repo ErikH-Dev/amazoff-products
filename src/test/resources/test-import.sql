@@ -4,7 +4,8 @@ INSERT INTO "User" (oauthId, oauthProvider, user_type) VALUES
 (102, 2, 'BUYER'),
 (103, 3, 'VENDOR'),
 (104, 4, 'VENDOR'),
-(105, 5, 'ADMIN');
+-- (105, 5, 'VENDOR'),
+(106, 5, 'ADMIN');
 
 -- Insert Buyers
 INSERT INTO BUYER (oauthId, firstName, lastName, email) VALUES
@@ -15,6 +16,7 @@ INSERT INTO BUYER (oauthId, firstName, lastName, email) VALUES
 INSERT INTO VENDOR (oauthId, storeName) VALUES
 (103, 'Tech Store'),
 (104, 'Gadget Hub');
+(106, 'Dummy Vendor');
 
 -- Insert Addresses (for Buyers)
 INSERT INTO addresses (id, oauthId, street, city, state, postal_code, country) VALUES 
