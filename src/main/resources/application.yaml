@@ -1,5 +1,6 @@
 # HTTP server configuration
 quarkus:
+  profile: dev
   http:
     cors:
       enabled: true

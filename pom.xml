@@ -216,5 +216,38 @@
                 <quarkus.native.enabled>true</quarkus.native.enabled>
             </properties>
         </profile>
+
+        <profile>
+            <id>test</id>
+            <activation>
+                <property>
+                    <name>quarkus.profile</name>
+                    <value>test</value>
+                </property>
+            </activation>
+        </profile>
+
+        <profile>
+            <id>dev</id>
+            <activation>
+                <property>
+                    <name>quarkus.profile</name>
+                    <value>dev</value>
+                </property>
+            </activation>
+            <properties>
+                <quarkus.profile>dev</quarkus.profile>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>prod</id>
+            <activation>
+                <property>
+                    <name>quarkus.profile</name>
+                    <value>prod</value>
+                </property>
+            </activation>
+        </profile>
     </profiles>
 </project>
