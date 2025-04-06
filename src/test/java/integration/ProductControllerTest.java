@@ -15,13 +15,13 @@ class ProductControllerTest {
     @TestTransaction
     void addProduct_shouldReturnCreatedProduct_whenProductIsValid() {
         Product product = new Product(
-            "Laptop",
-            1200.00,
-            "High-performance laptop"
+            "Tablet",
+            500.00,
+            "High-performance tablet"
         );
 
         given()
-            .queryParam("oauthId", 103) // Existing vendor ID (oauthId) from import.sql
+            .queryParam("oauthId", 103) // Existing vendor ID from test-import.sql
             .contentType("application/json")
             .body(product)
         .when()
@@ -52,7 +52,7 @@ class ProductControllerTest {
     @Test
     @TestTransaction
     void getProductById_shouldReturnProduct_whenProductExists() {
-        int productId = 302; // Assuming this product ID exists
+        int productId = 301; // Existing product ID from test-import.sql
 
         given()
             .pathParam("id", productId)
@@ -118,7 +118,7 @@ class ProductControllerTest {
     @Test
     @TestTransaction
     void deleteProduct_shouldReturnNoContent_whenProductExists() {
-        int productId = 301; // Assuming this product ID exists
+        int productId = 302; // Existing product ID from test-import.sql
 
         given()
             .pathParam("id", productId)

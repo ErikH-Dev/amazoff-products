@@ -8,7 +8,7 @@ import jakarta.validation.constraints.*;
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(name = "user_type", discriminatorType = DiscriminatorType.STRING)
-@Table(name = "`User`")
+@Table(name = "App_User")
 public abstract class User {
     @Id
     @NotNull(message = "OAuth ID must not be null")

@@ -17,7 +17,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 @Entity
-@Table(name = "BUYER")
+@Table(name = "App_Buyer")
 @DiscriminatorValue("BUYER")
 @PrimaryKeyJoinColumn(name = "oauthId")
 public class Buyer extends User {

@@ -54,7 +54,7 @@ class BuyerControllerTest {
     @Test
     @TestTransaction
     void getBuyerById_shouldReturnBuyer_whenBuyerExists() {
-        int oauthId = 102; // Assuming this buyer ID exists
+        int oauthId = 101; // Existing buyer ID from test-import.sql
 
         given()
             .pathParam("id", oauthId)
@@ -81,7 +81,7 @@ class BuyerControllerTest {
     @TestTransaction
     void updateBuyer_shouldReturnUpdatedBuyer_whenBuyerIsValid() {
         Buyer buyer = new Buyer(
-            102,
+            101,
             102,
             "Bop",
             "Bil",
@@ -120,7 +120,7 @@ class BuyerControllerTest {
     @Test
     @TestTransaction
     void deleteBuyer_shouldReturnNoContent_whenBuyerExists() {
-        int oauthId = 101; // Assuming this buyer ID exists
+        int oauthId = 102; // Existing buyer ID from test-import.sql
 
         given()
             .pathParam("id", oauthId)

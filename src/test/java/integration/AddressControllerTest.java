@@ -57,15 +57,14 @@ class AddressControllerTest {
     @Test
     @TestTransaction
     void getAllAddressesByUser_shouldReturnAddresses_whenUserExists() {
-        int oauthId = 101; // Existing user ID from import.sql
+        int oauthId = 101; // Existing user ID from test-import.sql
 
         given()
             .pathParam("oauthId", oauthId)
         .when()
             .get("/addresses/{oauthId}")
         .then()
-            .statusCode(200)
-            .log().all();
+            .statusCode(200);
     }
 
     @Test
@@ -130,15 +129,14 @@ class AddressControllerTest {
     @Test
     @TestTransaction
     void deleteAddress_shouldReturnNoContent_whenAddressExists() {
-        int addressId = 201;
+        int addressId = 201; // Existing address ID from test-import.sql
 
         given()
             .pathParam("id", addressId)
         .when()
             .delete("/addresses/{id}")
         .then()
-            .statusCode(204)
-            .log().all();
+            .statusCode(204);
     }
 
     @Test

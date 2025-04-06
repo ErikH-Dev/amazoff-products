@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
 @Entity
-@Table(name = "addresses")
+@Table(name = "App_Address")
 public class Address {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

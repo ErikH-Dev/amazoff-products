@@ -16,8 +16,8 @@ class VendorControllerTest {
     void addVendor_shouldReturnCreatedVendor_whenVendorIsValid() {
         Vendor vendor = new Vendor(
             107,
-            102,
-            "Tech Store"
+            1,
+            "New Tech Store"
         );
 
         given()
@@ -50,7 +50,7 @@ class VendorControllerTest {
     @Test
     @TestTransaction
     void getVendorById_shouldReturnVendor_whenVendorExists() {
-        int oauthId = 104; // Assuming this vendor ID exists
+        int oauthId = 103; // Existing vendor ID from test-import.sql
 
         given()
             .pathParam("id", oauthId)
@@ -77,7 +77,7 @@ class VendorControllerTest {
     @TestTransaction
     void updateVendor_shouldReturnUpdatedVendor_whenVendorIsValid() {
         Vendor vendor = new Vendor(
-            104,
+            103,
             102,
             "Updated Tech Store"
         );
@@ -112,7 +112,7 @@ class VendorControllerTest {
     @Test
     @TestTransaction
     void deleteVendor_shouldReturnNoContent_whenVendorExists() {
-        int oauthId = 103; // Assuming this vendor ID exists
+        int oauthId = 104; // Existing vendor ID from test-import.sql
 
         given()
             .pathParam("id", oauthId)

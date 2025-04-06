@@ -17,7 +17,7 @@ class OrderControllerTest {
     @Test
     @TestTransaction
     void createOrder_shouldReturnCreatedOrder_whenRequestIsValid() {
-        OrderRequest orderRequest = new OrderRequest(102, // Existing buyer ID from import.sql
+        OrderRequest orderRequest = new OrderRequest(101, // Existing buyer ID from test-import.sql
             List.of(
                 new OrderItemRequest(301, 1), // Product ID 301 with quantity 1
                 new OrderItemRequest(302, 2)  // Product ID 302 with quantity 2
@@ -30,8 +30,7 @@ class OrderControllerTest {
         .when()
             .post("/orders")
         .then()
-            .statusCode(200)
-            .log().all();
+            .statusCode(200);
     }
 
     @Test
@@ -56,15 +55,14 @@ class OrderControllerTest {
     @Test
     @TestTransaction
     void getOrderById_shouldReturnOrder_whenOrderExists() {
-        int orderId = 401; // Existing order ID from import.sql
+        int orderId = 401; // Existing order ID from test-import.sql
 
         given()
             .pathParam("id", orderId)
         .when()
             .get("/orders/{id}")
         .then()
-            .statusCode(200)
-            .log().all();
+            .statusCode(200);
     }
 
     @Test
@@ -84,7 +82,7 @@ class OrderControllerTest {
     @Test
     @TestTransaction
     void getAllOrdersByUser_shouldReturnOrders_whenUserExists() {
-        int oauthId = 102; // Existing buyer ID from import.sql
+        int oauthId = 101; // Existing buyer ID from import.sql
 
         given()
             .pathParam("oauthId", oauthId)
@@ -112,7 +110,7 @@ class OrderControllerTest {
     @Test
     @TestTransaction
     void updateOrderStatus_shouldReturnUpdatedOrder_whenStatusIsValid() {
-        int orderId = 402; // Existing order ID from import.sql
+        int orderId = 401; // Existing order ID from import.sql
         String updatedStatus = OrderStatus.PENDING.name(); // Valid status
 
         given()
@@ -146,15 +144,14 @@ class OrderControllerTest {
     @Test
     @TestTransaction
     void deleteOrder_shouldReturnNoContent_whenOrderExists() {
-        int orderId = 401; // Existing order ID from import.sql
+        int orderId = 402; // Existing order ID from test-import.sql
 
         given()
             .pathParam("id", orderId)
         .when()
             .delete("/orders/{id}")
         .then()
-            .statusCode(204)
-            .log().all();
+            .statusCode(204);
     }
 
     @Test
