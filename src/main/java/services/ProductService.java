@@ -5,9 +5,9 @@ import entities.Vendor;
 import interfaces.IProductRepository;
 import interfaces.IProductService;
 import interfaces.IVendorRepository;
+import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 
 import java.util.List;
 
@@ -22,45 +22,39 @@ public class ProductService implements IProductService {
     }
 
     @Override
-    @Transactional
-    public Product create(int oauthId, Product product) {
-        Vendor vendor = vendorRepository.read(oauthId);
-        if (vendor == null) {
-            throw new EntityNotFoundException("Vendor not found with id: " + oauthId);
-        }
-        product.setVendor(vendor);
-        return productRepository.create(product);
+    public Uni<Product> create(int oauthId, Product product) {
+        return vendorRepository.read(oauthId)
+            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Vendor not found with id: " + oauthId))
+            .flatMap(vendor -> {
+                product.setVendor(vendor);
+                return productRepository.create(product);
+            });
     }
 
     @Override
-    public List<Product> readAll() {
+    public Uni<List<Product>> readAll() {
         return productRepository.readAll();
     }
 
     @Override
-    public Product read(int id) {
+    public Uni<Product> read(int id) {
         return productRepository.read(id);
     }
 
     @Override
-    @Transactional
-    public Product update(int oauthId, Product product) {
-        Vendor vendor = vendorRepository.read(oauthId);
-        if (vendor == null) {
-            throw new EntityNotFoundException("Vendor not found with id: " + oauthId);
-        }
-
-        Product existingProduct = productRepository.read(product.getId());
-        if (existingProduct == null) {
-            throw new EntityNotFoundException("Product not found with id: " + product.getId());
-        }
-        product.setVendor(vendor);
-        return productRepository.update(product);
+    public Uni<Product> update(int oauthId, Product product) {
+        return vendorRepository.read(oauthId)
+            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Vendor not found with id: " + oauthId))
+            .flatMap(vendor -> productRepository.read(product.getId())
+                .onItem().ifNull().failWith(() -> new EntityNotFoundException("Product not found with id: " + product.getId()))
+                .flatMap(existingProduct -> {
+                    product.setVendor(vendor);
+                    return productRepository.update(product);
+                }));
     }
 
     @Override
-    @Transactional
-    public void delete(int id) {
-        productRepository.delete(id);
+    public Uni<Void> delete(int id) {
+        return productRepository.delete(id);
     }
 }

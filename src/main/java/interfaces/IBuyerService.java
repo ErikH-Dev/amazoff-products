@@ -1,10 +1,11 @@
 package interfaces;
 
 import entities.Buyer;
+import io.smallrye.mutiny.Uni;
 
 public interface IBuyerService {
-    Buyer create(Buyer buyer);
-    Buyer read(int oauthId);
-    Buyer update(Buyer buyer);
-    void delete(int oauthId);
+    Uni<Buyer> create(Buyer buyer);
+    Uni<Buyer> read(int oauthId);
+    Uni<Buyer> update(Buyer buyer);
+    Uni<Void> delete(int oauthId);
 }

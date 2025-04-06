@@ -2,49 +2,45 @@ package repositories;
 
 import entities.Buyer;
 import interfaces.IBuyerRepository;
+import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
 
 @ApplicationScoped
-public class BuyerRepository implements IBuyerRepository{
+public class BuyerRepository implements IBuyerRepository {
     @PersistenceContext
     private EntityManager entityManager;
 
     @Override
-    public Buyer create(Buyer buyer) {
-        entityManager.persist(buyer);
-        entityManager.flush();
-        entityManager.refresh(buyer);
-        return buyer;
+    public Uni<Buyer> create(Buyer buyer) {
+        return Uni.createFrom().item(() -> {
+            entityManager.persist(buyer);
+            entityManager.flush();
+            entityManager.refresh(buyer);
+            return buyer;
+        });
     }
 
     @Override
-    public Buyer read(int oauthId) {
-        Buyer buyer = entityManager.find(Buyer.class, oauthId);
-        if (buyer == null) {
-            throw new EntityNotFoundException("Buyer not found with id: " + oauthId);
-        }
-        return buyer;
+    public Uni<Buyer> read(int oauthId) {
+        return Uni.createFrom().item(() -> entityManager.find(Buyer.class, oauthId))
+            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Buyer not found with id: " + oauthId));
     }
 
     @Override
-    public Buyer update(Buyer buyer) {
-        Buyer existingBuyer = entityManager.find(Buyer.class, buyer.getOauthId());
-        if (existingBuyer == null) {
-            throw new EntityNotFoundException("Buyer not found with id: " + buyer.getOauthId());
-        }
-
-        return entityManager.merge(buyer);
+    public Uni<Buyer> update(Buyer buyer) {
+        return Uni.createFrom().item(() -> entityManager.find(Buyer.class, buyer.getOauthId()))
+            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Buyer not found with id: " + buyer.getOauthId()))
+            .map(existingBuyer -> entityManager.merge(buyer));
     }
 
     @Override
-    public void delete(int oauthId) {
-        Buyer buyer = entityManager.find(Buyer.class, oauthId);
-        if (buyer == null) {
-            throw new EntityNotFoundException("Buyer not found with id: " + oauthId);
-        }
-        entityManager.remove(buyer);
+    public Uni<Void> delete(int oauthId) {
+        return Uni.createFrom().item(() -> entityManager.find(Buyer.class, oauthId))
+            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Buyer not found with id: " + oauthId))
+            .invoke(entityManager::remove)
+            .replaceWithVoid();
     }
 }

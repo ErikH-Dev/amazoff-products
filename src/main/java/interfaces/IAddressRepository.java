@@ -1,13 +1,14 @@
 package interfaces;
 
 import entities.Address;
+import io.smallrye.mutiny.Uni;
 
 import java.util.List;
 
 public interface IAddressRepository {
-    Address create(Address address);
-    Address update(Address address);
-    void delete(int id);
-    List<Address> readAllByUser(int userId);
-    Address readById(int id);
+    Uni<Address> create(Address address);
+    Uni<Address> update(Address address);
+    Uni<Void> delete(int id);
+    Uni<List<Address>> readAllByUser(int userId);
+    Uni<Address> readById(int id);
 }

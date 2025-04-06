@@ -3,13 +3,14 @@ package interfaces;
 import java.util.List;
 
 import entities.Product;
+import io.smallrye.mutiny.Uni;
 
 public interface IProductRepository {
 
-    Product create(Product product);
-    List<Product> readAll();
-    Product read(int id);
-    Product update(Product product);
-    void delete(int id);
+    Uni<Product> create(Product product);
+    Uni<List<Product>> readAll();
+    Uni<Product> read(int id);
+    Uni<Product> update(Product product);
+    Uni<Void> delete(int id);
 
 }

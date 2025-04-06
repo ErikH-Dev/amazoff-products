@@ -1,10 +1,11 @@
 package interfaces;
 
 import entities.Vendor;
+import io.smallrye.mutiny.Uni;
 
 public interface IVendorService {
-    Vendor create(Vendor buyer);
-    Vendor read(int oauthId);
-    Vendor update(Vendor buyer);
-    void delete(int oauthId);
+    Uni<Vendor> create(Vendor vendor);
+    Uni<Vendor> read(int oauthId);
+    Uni<Vendor> update(Vendor vendor);
+    Uni<Void> delete(int oauthId);
 }

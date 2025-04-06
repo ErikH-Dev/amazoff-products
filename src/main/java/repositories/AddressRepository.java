@@ -2,6 +2,7 @@ package repositories;
 
 import entities.Address;
 import interfaces.IAddressRepository;
+import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
@@ -15,36 +16,40 @@ public class AddressRepository implements IAddressRepository {
     private EntityManager entityManager;
 
     @Override
-    public Address create(Address address) {
-        entityManager.persist(address);
-        entityManager.flush();
-        entityManager.refresh(address);
-        return address;
+    public Uni<Address> create(Address address) {
+        return Uni.createFrom().item(() -> {
+            entityManager.persist(address);
+            entityManager.flush();
+            entityManager.refresh(address);
+            return address;
+        });
     }
 
     @Override
-    public Address update(Address address) {
-        return entityManager.merge(address);
+    public Uni<Address> update(Address address) {
+        return Uni.createFrom().item(() -> entityManager.find(Address.class, address.getId()))
+            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Address not found with id: " + address.getId()))
+            .map(existingAddress -> entityManager.merge(address));
     }
 
     @Override
-    public void delete(int id) {
-        Address address = entityManager.find(Address.class, id);
-        if (address == null) {
-            throw new EntityNotFoundException("Address not found with id: " + id);
-        }
-        entityManager.remove(address);
+    public Uni<Void> delete(int id) {
+        return Uni.createFrom().item(() -> entityManager.find(Address.class, id))
+            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Address not found with id: " + id))
+            .invoke(entityManager::remove)
+            .replaceWithVoid();
     }
 
     @Override
-    public List<Address> readAllByUser(int oauthId) {
-        return entityManager.createQuery(
+    public Uni<List<Address>> readAllByUser(int oauthId) {
+        return Uni.createFrom().item(() -> entityManager.createQuery(
             "SELECT a FROM Address a WHERE a.buyer.oauthId = :oauthId", Address.class
-        ).setParameter("oauthId", oauthId).getResultList();
+        ).setParameter("oauthId", oauthId).getResultList());
     }
 
     @Override
-    public Address readById(int id) {
-        return entityManager.find(Address.class, id);
+    public Uni<Address> readById(int id) {
+        return Uni.createFrom().item(() -> entityManager.find(Address.class, id))
+            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Address not found with id: " + id));
     }
 }

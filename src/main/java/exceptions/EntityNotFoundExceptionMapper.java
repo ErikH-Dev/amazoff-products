@@ -10,7 +10,7 @@ public class EntityNotFoundExceptionMapper implements ExceptionMapper<EntityNotF
     @Override
     public Response toResponse(EntityNotFoundException exception) {
         return Response.status(Response.Status.NOT_FOUND)
-                .entity(new ErrorResponse("Resource not found: " + exception.getMessage()))
-                .build();
+            .entity(new ErrorResponse("Resource not found: " + exception.getMessage()))
+            .build();
     }
 }

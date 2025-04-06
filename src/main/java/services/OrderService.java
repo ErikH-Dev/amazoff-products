@@ -13,9 +13,9 @@ import interfaces.IBuyerRepository;
 import interfaces.IOrderRepository;
 import interfaces.IOrderService;
 import interfaces.IProductRepository;
+import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 
 @ApplicationScoped
 public class OrderService implements IOrderService {
@@ -30,64 +30,53 @@ public class OrderService implements IOrderService {
     }
 
     @Override
-    @Transactional
-    public Order create(OrderRequest orderRequest) {
-        Buyer buyer = buyerRepository.read(orderRequest.getOauthId());
-        if (buyer == null) {
-            throw new EntityNotFoundException("Buyer not found with ID: " + orderRequest.getOauthId());
-        }
-    
-        List<OrderItem> orderItems = orderRequest.getItems().stream().map(itemRequest -> {
-            Product product = productRepository.read(itemRequest.getProductId());
-            if (product == null) {
-                throw new EntityNotFoundException("Product not found with ID: " + itemRequest.getProductId());
-            }
-            double priceAtPurchase = product.getPrice() * itemRequest.getQuantity();
-            return new OrderItem(null, product.getName(), product.getPrice(), product.getDescription(),
-                    itemRequest.getQuantity(), priceAtPurchase);
-        }).toList();
-    
-        Order order = new Order(buyer, orderItems, OrderStatus.PENDING, LocalDateTime.now());
-    
-        for (OrderItem orderItem : orderItems) {
-            orderItem.setOrder(order);
-        }
-    
-        return orderRepository.create(order);
+    public Uni<Order> create(OrderRequest orderRequest) {
+        return buyerRepository.read(orderRequest.getOauthId())
+            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Buyer not found with ID: " + orderRequest.getOauthId()))
+            .flatMap(buyer -> {
+                List<Uni<OrderItem>> orderItemsUnis = orderRequest.getItems().stream()
+                    .map(itemRequest -> productRepository.read(itemRequest.getProductId())
+                        .onItem().ifNull().failWith(() -> new EntityNotFoundException("Product not found with ID: " + itemRequest.getProductId()))
+                        .map(product -> {
+                            double priceAtPurchase = product.getPrice() * itemRequest.getQuantity();
+                            return new OrderItem(null, product.getName(), product.getPrice(), product.getDescription(),
+                                itemRequest.getQuantity(), priceAtPurchase);
+                        }))
+                    .toList();
+
+                return Uni.combine().all().unis(orderItemsUnis).combinedWith(orderItems -> {
+                    List<OrderItem> orderItemsList = (List<OrderItem>) orderItems;
+                    Order order = new Order(buyer, orderItemsList, OrderStatus.PENDING, LocalDateTime.now());
+                    orderItemsList.forEach(orderItem -> orderItem.setOrder(order));
+                    return order;
+                }).flatMap(orderRepository::create);
+            });
     }
 
     @Override
-    public Order read(int id) {
+    public Uni<Order> read(int id) {
         return orderRepository.read(id);
     }
 
     @Override
-    public List<Order> readAllByUser(int oauthId) {
-        Buyer buyer = buyerRepository.read(oauthId);
-        if (buyer == null) {
-            throw new EntityNotFoundException("Buyer not found with ID: " + oauthId);
-        }
-        List<Order> orders = orderRepository.readAllByUser(oauthId);
-        if (orders.isEmpty()) {
-            throw new EntityNotFoundException("No orders found for Buyer with ID: " + oauthId);
-        }
-        return orders;
+    public Uni<List<Order>> readAllByUser(int oauthId) {
+        return buyerRepository.read(oauthId)
+            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Buyer not found with ID: " + oauthId))
+            .flatMap(buyer -> orderRepository.readAllByUser(oauthId));
     }
 
     @Override
-    @Transactional
-    public Order updateOrderStatus(int id, OrderStatus orderStatus) {
-        Order order = orderRepository.read(id);
-        if (order == null) {
-            throw new EntityNotFoundException("Order not found with ID: " + id);
-        }
-        order.setStatus(orderStatus);
-        return orderRepository.update(order);
+    public Uni<Order> updateOrderStatus(int id, OrderStatus orderStatus) {
+        return orderRepository.read(id)
+            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Order not found with ID: " + id))
+            .flatMap(order -> {
+                order.setStatus(orderStatus);
+                return orderRepository.update(order);
+            });
     }
 
     @Override
-    @Transactional
-    public void delete(int id) {
-        orderRepository.delete(id);
+    public Uni<Void> delete(int id) {
+        return orderRepository.delete(id);
     }
 }

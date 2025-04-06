@@ -5,8 +5,8 @@ import entities.Buyer;
 import interfaces.IAddressRepository;
 import interfaces.IBuyerRepository;
 import interfaces.IAddressService;
+import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.transaction.Transactional;
 import jakarta.persistence.EntityNotFoundException;
 
 import java.util.List;
@@ -22,43 +22,36 @@ public class AddressService implements IAddressService {
     }
 
     @Override
-    @Transactional
-    public Address create(int userId, Address address) {
-        Buyer buyer = buyerRepository.read(userId);
-        if (buyer == null) {
-            throw new EntityNotFoundException("Buyer not found with id: " + userId);
-        }
-        address.setBuyer(buyer);
-        return addressRepository.create(address);
+    public Uni<Address> create(int oauthId, Address address) {
+        return buyerRepository.read(oauthId)
+            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Buyer not found with id: " + oauthId))
+            .flatMap(buyer -> {
+                address.setBuyer(buyer);
+                return addressRepository.create(address);
+            });
     }
 
     @Override
-    @Transactional
-    public Address update(int oauthId, Address address) {
-        Buyer buyer = buyerRepository.read(oauthId);
-        if (buyer == null) {
-            throw new EntityNotFoundException("Buyer not found with id: " + oauthId);
-        }
-
-        Address existingAddress = addressRepository.readById(address.getId());
-        if (existingAddress == null) {
-            throw new EntityNotFoundException("Address not found with id: " + address.getId());
-        }
-        address.setBuyer(buyer);
-        return addressRepository.update(address);
+    public Uni<Address> update(int oauthId, Address address) {
+        return buyerRepository.read(oauthId)
+            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Buyer not found with id: " + oauthId))
+            .flatMap(buyer -> addressRepository.readById(address.getId())
+                .onItem().ifNull().failWith(() -> new EntityNotFoundException("Address not found with id: " + address.getId()))
+                .flatMap(existingAddress -> {
+                    address.setBuyer(buyer);
+                    return addressRepository.update(address);
+                }));
     }
 
     @Override
-    @Transactional
-    public void delete(int id) {
-        addressRepository.delete(id);
+    public Uni<Void> delete(int id) {
+        return addressRepository.delete(id);
     }
 
     @Override
-    public List<Address> readAllByUser(int oauthId) {
-        if (buyerRepository.read(oauthId) == null) {
-            throw new EntityNotFoundException("Buyer not found with id: " + oauthId);
-        }
-        return addressRepository.readAllByUser(oauthId);
+    public Uni<List<Address>> readAllByUser(int oauthId) {
+        return buyerRepository.read(oauthId)
+            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Buyer not found with id: " + oauthId))
+            .flatMap(buyer -> addressRepository.readAllByUser(oauthId));
     }
 }

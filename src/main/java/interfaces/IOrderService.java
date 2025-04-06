@@ -5,11 +5,12 @@ import java.util.List;
 import dto.OrderRequest;
 import entities.Order;
 import enums.OrderStatus;
+import io.smallrye.mutiny.Uni;
 
 public interface IOrderService {
-    Order create(OrderRequest orderRequest);
-    Order read(int id);
-    List<Order> readAllByUser(int oauthId);
-    Order updateOrderStatus(int id, OrderStatus orderStatus);
-    void delete(int id);
+    Uni<Order> create(OrderRequest orderRequest);
+    Uni<Order> read(int id);
+    Uni<List<Order>> readAllByUser(int oauthId);
+    Uni<Order> updateOrderStatus(int id, OrderStatus orderStatus);
+    Uni<Void> delete(int id);
 }

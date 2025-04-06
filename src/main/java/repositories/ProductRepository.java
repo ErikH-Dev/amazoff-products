@@ -4,11 +4,11 @@ import java.util.List;
 
 import entities.Product;
 import interfaces.IProductRepository;
+import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
 
 @ApplicationScoped
 public class ProductRepository implements IProductRepository {
@@ -16,51 +16,39 @@ public class ProductRepository implements IProductRepository {
     private EntityManager entityManager;
 
     @Override
-    public Product create(Product product) {
-        entityManager.persist(product);
-        entityManager.flush();
-        entityManager.refresh(product);
-        return product;
+    public Uni<Product> create(Product product) {
+        return Uni.createFrom().item(() -> {
+            entityManager.persist(product);
+            entityManager.flush();
+            entityManager.refresh(product);
+            return product;
+        });
     }
 
     @Override
-    public List<Product> readAll() {
-        TypedQuery<Product> query = entityManager.createQuery("SELECT p FROM Product p", Product.class);
-        List<Product> products = query.getResultList();
-
-        if (products.isEmpty()) {
-            throw new EntityNotFoundException("No addresses found");
-        }
-
-        return products;
+    public Uni<List<Product>> readAll() {
+        return Uni.createFrom().item(() -> entityManager.createQuery("SELECT p FROM Product p", Product.class)
+            .getResultList());
     }
 
     @Override
-    public Product read(int id) {
-        Product product = entityManager.find(Product.class, id);
-        if (product == null) {
-            throw new EntityNotFoundException("Product not found with id: " + id);
-        }
-        return product;
+    public Uni<Product> read(int id) {
+        return Uni.createFrom().item(() -> entityManager.find(Product.class, id))
+            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Product not found with id: " + id));
     }
 
     @Override
-    public Product update(Product product) {
-        Product existingProduct = entityManager.find(Product.class, product.getId());
-        if (existingProduct == null) {
-            throw new EntityNotFoundException("Product not found with id: " + product.getId());
-        }
-
-        return entityManager.merge(product);
+    public Uni<Product> update(Product product) {
+        return Uni.createFrom().item(() -> entityManager.find(Product.class, product.getId()))
+            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Product not found with id: " + product.getId()))
+            .map(existingProduct -> entityManager.merge(product));
     }
 
     @Override
-    public void delete(int id) {
-        Product existingProduct = entityManager.find(Product.class, id);
-        if (existingProduct == null) {
-            throw new EntityNotFoundException("Product not found with id: " + id);
-        }
-        entityManager.remove(existingProduct);
+    public Uni<Void> delete(int id) {
+        return Uni.createFrom().item(() -> entityManager.find(Product.class, id))
+            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Product not found with id: " + id))
+            .invoke(entityManager::remove)
+            .replaceWithVoid();
     }
-
 }
