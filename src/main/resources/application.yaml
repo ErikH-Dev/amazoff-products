@@ -1,73 +1,63 @@
-# HTTP server configuration
+# Global configuration shared by all profiles
 quarkus:
-  profile: dev
   http:
-    cors:
-      enabled: true
-      origins: "http://localhost:3000"
-      methods: "GET,POST,PUT,DELETE,OPTIONS"
-      headers: "Content-Type,Authorization"
-  # Logging configuration
-  log:
-    category:
-      "org.acme":
-        level: INFO
-      "io.quarkus":
-        level: INFO
+    port: 8080
+  application:
+    name: amazoff-users
 
-  # Database configuration
-  datasource:
-    db-kind: h2
-    username: sa
-    password: sa
-    jdbc:
-      url: jdbc:h2:mem:dev;DB_CLOSE_DELAY=-1
-      max-size: 16
-
-  # Hibernate ORM configuration
   hibernate-orm:
+    log:
+      sql: false
     database:
-      generation: drop-and-create
-    dialect: org.hibernate.dialect.H2Dialect
-    # sql-load-script: import.sql    
+      generation: update
+    
+# Development profile configuration
+"%dev":
+  quarkus:
+    datasource:
+      db-kind: postgresql
+      username: postgres
+      password: postgres
+      reactive:
+        url: vertx-reactive:postgresql://localhost:5432/amazoff_users_dev
+    hibernate-orm:
+      log:
+        sql: true
+      database:
+        generation: drop-and-create
+    log:
+      console:
+        level: DEBUG
 
-    # # Flyway configuration
-    # flyway:
-    #   migrate-at-start: true
-    #   locations: db/migration
+# Test profile configuration
+"%test":
+  quarkus:
+    datasource:
+      db-kind: h2
+      jdbc:
+        url: jdbc:h2:mem:amazoff_users_test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+        driver: org.h2.Driver
+      username: sa
+      password: ""
+    hibernate-orm:
+      database:
+        generation: drop-and-create
+    log:
+      console:
+        level: DEBUG
 
-    # # Health check configuration
-    # health:
-    #   ui:
-    #     enabled: true
-    #     root-path: /health
-
-    # # OpenAPI configuration
-    # smallrye-openapi:
-    #   path: /openapi
-    #   info:
-    #     title: "Microservice API"
-    #     version: "1.0.0"
-
-    # # Metrics configuration
-    # metrics:
-    #   enabled: true
-    #   export:
-    #     prometheus:
-    #       enabled: true
-    #       path: /metrics
-
-  # # OIDC configuration
-  # oidc:
-  #   auth-server-url: https://auth.example.com
-  #   client-id: my-microservice
-  #   credentials:
-  #     secret: my-secret
-  #   token:
-  #     issuer: https://auth.example.com
-  #   application-type: service
-  #   authentication:
-  #     scopes:
-  #       - openid
-  #       - profile
-  #       - email
+# Production profile configuration
+"%prod":
+  quarkus:
+    datasource:
+      db-kind: postgresql
+      username: ${DB_USERNAME:postgres}
+      password: ${DB_PASSWORD:changeme}
+      reactive:
+        url: vertx-reactive:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:amazoff_users}
+    hibernate-orm:
+      database:
+        generation: update
+    log:
+      console:
+        level: INFO
