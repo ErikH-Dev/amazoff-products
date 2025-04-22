@@ -1,9 +1,14 @@
 # Global configuration shared by all profiles
 quarkus:
   http:
-    port: 8080
+    port: 8081
   application:
-    name: amazoff-users
+    name: amazoff-products
+  rest-client:
+    user-service:
+      url: http://localhost:8080
+      connect-timeout: 5000
+      read-timeout: 10000
 
   hibernate-orm:
     log:
@@ -16,15 +21,17 @@ quarkus:
   quarkus:
     datasource:
       db-kind: postgresql
-      username: postgres
-      password: postgres
+      username: amazoff_user
+      password: amazoff_password
       reactive:
-        url: vertx-reactive:postgresql://localhost:5432/amazoff_users_dev
+        url: vertx-reactive:postgresql://localhost:5432/amazoff_products
     hibernate-orm:
       log:
         sql: true
-      database:
-        generation: drop-and-create
+      sql-load-script: import.sql
+      reactive:
+        database:
+          generation: drop-and-create
     log:
       console:
         level: DEBUG
@@ -40,8 +47,10 @@ quarkus:
       username: sa
       password: ""
     hibernate-orm:
-      database:
-        generation: drop-and-create
+      sql-load-script: import.sql
+      reactive:
+        database:
+          generation: drop-and-create
     log:
       console:
         level: DEBUG
@@ -52,12 +61,24 @@ quarkus:
     datasource:
       db-kind: postgresql
       username: ${DB_USERNAME:postgres}
-      password: ${DB_PASSWORD:changeme}
+      password: ${DB_PASSWORD:postgres}
       reactive:
-        url: vertx-reactive:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:amazoff_users}
+        url: vertx-reactive:postgresql://${DB_HOST:products-db}:${DB_PORT:5432}/${DB_NAME:amazoff}
     hibernate-orm:
       database:
         generation: update
     log:
       console:
-        level: INFO
+        level: DEBUG
+
+    rest-client:
+      user-service:
+        url: http://users-app:8080
+        connect-timeout: 5000
+        read-timeout: 10000
+
+    swagger-ui:
+      always-include: true
+      path: /q/swagger-ui
+    smallrye-openapi:
+      path: /q/openapi

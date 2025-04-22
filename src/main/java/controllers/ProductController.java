@@ -1,6 +1,9 @@
 package controllers;
 
-import entities.Product;
+import java.util.List;
+
+import dto.CreateProductRequest;
+import dto.UpdateProductRequest;
 import interfaces.IProductService;
 import io.smallrye.mutiny.Uni;
 import jakarta.validation.Valid;
@@ -19,8 +22,8 @@ public class ProductController {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<Response> addProduct(@QueryParam("oauthId") int oauthId, @Valid Product product) {
-        return productService.create(oauthId, product)
+    public Uni<Response> addProduct(@Valid CreateProductRequest productRequest) {
+        return productService.create(productRequest)
             .onItem().transform(createdProduct -> Response.ok(createdProduct).build());
     }
 
@@ -39,11 +42,19 @@ public class ProductController {
             .onItem().transform(products -> Response.ok(products).build());
     }
 
+    @GET
+    @Path("/batch")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<Response> getProductsByIds(@QueryParam("ids") List<Integer> ids) {
+        return productService.readByIds(ids)
+            .onItem().transform(products -> Response.ok(products).build());
+    }
+
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<Response> updateProduct(@QueryParam("oauthId") int oauthId, @Valid Product product) {
-        return productService.update(oauthId, product)
+    public Uni<Response> updateProduct(@Valid UpdateProductRequest productRequest) {
+        return productService.update(productRequest)
             .onItem().transform(updatedProduct -> Response.ok(updatedProduct).build());
     }
 

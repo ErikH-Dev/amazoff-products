@@ -1,5 +1,6 @@
-package exceptions;
+package exceptions.mappers;
 
+import exceptions.ErrorResponse;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;

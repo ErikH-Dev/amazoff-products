@@ -3,52 +3,64 @@ package repositories;
 import java.util.List;
 
 import entities.Product;
+import exceptions.errors.ProductNotFoundException;
 import interfaces.IProductRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.persistence.PersistenceContext;
+import jakarta.inject.Inject;
+import org.hibernate.reactive.mutiny.Mutiny.SessionFactory;
 
 @ApplicationScoped
 public class ProductRepository implements IProductRepository {
-    @PersistenceContext
-    private EntityManager entityManager;
+
+    @Inject
+    SessionFactory sessionFactory;
 
     @Override
     public Uni<Product> create(Product product) {
-        return Uni.createFrom().item(() -> {
-            entityManager.persist(product);
-            entityManager.flush();
-            entityManager.refresh(product);
-            return product;
-        });
+        return sessionFactory.withTransaction(session -> session.persist(product).replaceWith(product))
+            .onFailure().invoke(e -> {
+                throw new RuntimeException("Failed to create product: " + e.getMessage(), e);
+            });
     }
 
     @Override
     public Uni<List<Product>> readAll() {
-        return Uni.createFrom().item(() -> entityManager.createQuery("SELECT p FROM Product p", Product.class)
-            .getResultList());
+        return sessionFactory.withSession(session -> session.createQuery("FROM Product", Product.class).getResultList())
+            .onFailure().invoke(e -> {
+                throw new RuntimeException("Failed to retrieve products: " + e.getMessage(), e);
+            });
+    }
+
+    @Override
+    public Uni<List<Product>> readByIds(List<Integer> ids) {
+        return sessionFactory.withSession(session -> session.createQuery("FROM Product WHERE id IN :ids", Product.class)
+            .setParameter("ids", ids).getResultList())
+            .onFailure().invoke(e -> {
+                throw new RuntimeException("Failed to retrieve products by IDs: " + e.getMessage(), e);
+            });
     }
 
     @Override
     public Uni<Product> read(int id) {
-        return Uni.createFrom().item(() -> entityManager.find(Product.class, id))
-            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Product not found with id: " + id));
+        return sessionFactory.withSession(session -> session.find(Product.class, id))
+            .onItem().ifNull().failWith(() -> new ProductNotFoundException(id));
     }
 
     @Override
     public Uni<Product> update(Product product) {
-        return Uni.createFrom().item(() -> entityManager.find(Product.class, product.getId()))
-            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Product not found with id: " + product.getId()))
-            .map(existingProduct -> entityManager.merge(product));
+        return sessionFactory.withTransaction(session -> 
+            session.find(Product.class, product.getId())
+                .onItem().ifNull().failWith(() -> new ProductNotFoundException(product.getId()))
+                .onItem().ifNotNull().transformToUni(found -> session.merge(product))
+        );
     }
 
     @Override
     public Uni<Void> delete(int id) {
-        return Uni.createFrom().item(() -> entityManager.find(Product.class, id))
-            .onItem().ifNull().failWith(() -> new EntityNotFoundException("Product not found with id: " + id))
-            .invoke(entityManager::remove)
-            .replaceWithVoid();
+        return sessionFactory.withTransaction(session -> session.find(Product.class, id)
+            .onItem().ifNull().failWith(() -> new ProductNotFoundException(id))
+            .onItem().ifNotNull().invoke(session::remove)
+            .replaceWithVoid());
     }
 }

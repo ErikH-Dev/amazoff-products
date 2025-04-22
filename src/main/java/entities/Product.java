@@ -1,16 +1,17 @@
 package entities;
 
-import jakarta.json.bind.annotation.JsonbCreator;
-import jakarta.json.bind.annotation.JsonbProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import dto.VendorDTO;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 @Entity
@@ -18,24 +19,68 @@ import jakarta.validation.constraints.Size;
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @NotNull(message = "Product ID must not be null")
+    @JsonProperty("product_id")
     private int id;
 
-    @NotBlank
-    @Size(max = 100)
+    @NotNull(message = "oauthId must not be null")
+    @JsonProperty("oauth_id")
+    private int oauthId;
+    
+    @Transient
+    @JsonProperty("vendor")
+    private VendorDTO vendorDTO;
+
+    @NotBlank(message = "Name must not be blank")
+    @Size(max = 100, message = "Name must not exceed 100 characters")
+    @JsonProperty("name")
     private String name;
 
-    @NotNull
+    @NotNull(message = "Price must not be null")
+    @Positive(message = "Price must be a positive number")
+    @JsonProperty("price")
     private Double price;
 
-    @NotBlank
+    @NotBlank(message = "Description must not be blank")
     @Size(max = 500, message = "Description cannot be longer than 500 characters")
+    @JsonProperty("description")
     private String description;
 
     public Product() {
     }
 
+    public Product(int id, String name, Double price, String description) {
+        this.id = id;
+        this.name = name;
+        this.price = price;
+        this.description = description;
+        
+    }
+
+    public Product(String name, int oauthId, Double price, String description) {
+        this.name = name;
+        this.oauthId = oauthId;
+        this.price = price;
+        this.description = description;
+    }
+
     public int getId() {
         return id;
+    }
+
+    public int getOauthId() {
+        return oauthId;
+    }
+
+    public VendorDTO getVendorDTO() {
+        return vendorDTO;
+    }
+    
+    public void setVendorDTO(VendorDTO vendorDTO) {
+        this.vendorDTO = vendorDTO;
+        if (vendorDTO != null) {
+            this.oauthId = vendorDTO.getOauthId();
+        }
     }
 
     public String getName() {
