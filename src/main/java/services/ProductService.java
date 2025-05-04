@@ -9,25 +9,22 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 import java.util.List;
 
-import org.eclipse.microprofile.rest.client.inject.RestClient;
-
-import clients.IVendorServiceClient;
 import dto.CreateProductRequest;
 import dto.UpdateProductRequest;
 
 @ApplicationScoped
 public class ProductService implements IProductService {
     private IProductRepository productRepository;
-    private @RestClient IVendorServiceClient vendorServiceClient;
+    private VendorClientService vendorClientService;
 
-    public ProductService(IProductRepository productRepository, @RestClient IVendorServiceClient vendorServiceClient) {
+    public ProductService(IProductRepository productRepository, VendorClientService vendorClientService) {
         this.productRepository = productRepository;
-        this.vendorServiceClient = vendorServiceClient;
+        this.vendorClientService = vendorClientService;
     }
 
     @Override
     public Uni<Product> create(CreateProductRequest productRequest) {
-        return vendorServiceClient.getVendorById(productRequest.oauth_id)
+        return vendorClientService.getVendorByOauthId(productRequest.oauth_id)
                 .onItem().ifNull().failWith(new VendorNotFoundException(productRequest.oauth_id))
                 .onItem().transform(vendor -> new Product(productRequest.name, productRequest.oauth_id,
                         productRequest.price, productRequest.description))
@@ -40,7 +37,7 @@ public class ProductService implements IProductService {
             .onItem().transformToUni(products ->
                 Uni.combine().all().unis(
                     products.stream()
-                        .map(product -> vendorServiceClient.getVendorById(product.getOauthId())
+                        .map(product -> vendorClientService.getVendorByOauthId(product.getOauthId())
                             .invoke(product::setVendorDTO)
                             .replaceWith(product))
                         .toList()
@@ -54,7 +51,7 @@ public class ProductService implements IProductService {
             .onItem().transformToUni(products ->
                 Uni.combine().all().unis(
                     products.stream()
-                        .map(product -> vendorServiceClient.getVendorById(product.getOauthId())
+                        .map(product -> vendorClientService.getVendorByOauthId(product.getOauthId())
                             .invoke(product::setVendorDTO)
                             .replaceWith(product))
                         .toList()
@@ -66,7 +63,7 @@ public class ProductService implements IProductService {
     public Uni<Product> read(int id) {
         return productRepository.read(id)
             .onItem().transformToUni(product ->
-                vendorServiceClient.getVendorById(product.getOauthId())
+                vendorClientService.getVendorByOauthId(product.getOauthId())
                     .invoke(product::setVendorDTO)
                     .replaceWith(product)
             );
@@ -74,7 +71,7 @@ public class ProductService implements IProductService {
 
     @Override
     public Uni<Product> update(UpdateProductRequest productRequest) {
-        return vendorServiceClient.getVendorById(productRequest.oauth_id)
+        return vendorClientService.getVendorByOauthId(productRequest.oauth_id)
                 .onItem().ifNull().failWith(new VendorNotFoundException(productRequest.oauth_id))
                 .onItem().transform(vendor -> new Product(productRequest.id, productRequest.name,
                         productRequest.price, productRequest.description))
