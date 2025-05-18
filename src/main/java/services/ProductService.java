@@ -1,15 +1,20 @@
 package services;
 
 import entities.Product;
+import exceptions.errors.InsufficientStockException;
+import exceptions.errors.ProductNotFoundException;
 import exceptions.errors.VendorNotFoundException;
 import interfaces.IProductRepository;
 import interfaces.IProductService;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import dto.CreateProductRequest;
+import dto.ReserveStockItem;
 import dto.UpdateProductRequest;
 
 @ApplicationScoped
@@ -27,7 +32,7 @@ public class ProductService implements IProductService {
         return vendorClientService.getVendorByOauthId(productRequest.oauth_id)
                 .onItem().ifNull().failWith(new VendorNotFoundException(productRequest.oauth_id))
                 .onItem().transform(vendor -> new Product(productRequest.name, productRequest.oauth_id,
-                        productRequest.price, productRequest.description))
+                        productRequest.price, productRequest.description, productRequest.stock))
                 .onItem().transformToUni(product -> productRepository.create(product));
     }
 
@@ -74,8 +79,39 @@ public class ProductService implements IProductService {
         return vendorClientService.getVendorByOauthId(productRequest.oauth_id)
                 .onItem().ifNull().failWith(new VendorNotFoundException(productRequest.oauth_id))
                 .onItem().transform(vendor -> new Product(productRequest.id, productRequest.name,
-                        productRequest.price, productRequest.description))
+                        productRequest.price, productRequest.description, productRequest.stock))
                 .onItem().transformToUni(product -> productRepository.update(product));
+    }
+
+    @Override
+    public Uni<Void> reserveProductStocks(List<ReserveStockItem> items) {
+        List<Integer> ids = items.stream().map(i -> i.productId).toList();
+        return productRepository.readByIds(ids)
+            .onItem().ifNull().failWith(new ProductNotFoundException(-1))
+            .onItem().transformToUni(products -> {
+                Map<Integer, Product> productMap = new HashMap<>();
+                for (Product p : products) productMap.put(p.getId(), p);
+
+                for (ReserveStockItem item : items) {
+                    Product p = productMap.get(item.productId);
+                    if (p == null) {
+                        return Uni.createFrom().failure(new ProductNotFoundException(item.productId));
+                    }
+                    if (p.getStock() < item.quantity) {
+                        return Uni.createFrom().failure(new InsufficientStockException(item.productId, item.quantity, p.getStock()));
+                    }
+                }
+                List<Uni<Product>> updates = items.stream()
+                    .map(item -> {
+                        Product p = productMap.get(item.productId);
+                        Product updated = new Product(
+                            p.getId(), p.getName(), p.getOauthId(), p.getPrice(), p.getDescription(), p.getStock() - item.quantity
+                        );
+                        return productRepository.update(updated);
+                    })
+                    .toList();
+                return Uni.combine().all().unis(updates).discardItems();
+            });
     }
 
     @Override

@@ -30,4 +30,9 @@ public class UpdateProductRequest {
     @Size(max = 500, message = "Description cannot be longer than 500 characters")
     @JsonProperty("description")
     public String description;
+
+    @NotBlank
+    @Positive(message = "Stock must be a positive number")
+    @JsonProperty("stock")
+    public int stock;
 }

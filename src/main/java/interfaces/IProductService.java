@@ -5,6 +5,7 @@ import io.smallrye.mutiny.Uni;
 import java.util.List;
 
 import dto.CreateProductRequest;
+import dto.ReserveStockItem;
 import dto.UpdateProductRequest;
 
 public interface IProductService {
@@ -13,5 +14,6 @@ public interface IProductService {
     Uni<List<Product>> readByIds(List<Integer> ids);
     Uni<Product> read(int id);
     Uni<Product> update(UpdateProductRequest productRequest);
+    Uni<Void> reserveProductStocks(List<ReserveStockItem> items);
     Uni<Void> delete(int id);
 }

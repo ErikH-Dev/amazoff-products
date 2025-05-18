@@ -19,14 +19,15 @@ public class VendorClientService {
 
     @Inject
     @Channel("get-vendor-requests")
-    Emitter<String> requestEmitter;
+    Emitter<JsonObject> requestEmitter;
 
     private final ConcurrentHashMap<Integer, CompletableFuture<VendorDTO>> pendingRequests = new ConcurrentHashMap<>();
 
     public Uni<VendorDTO> getVendorByOauthId(int oauthId) {
         CompletableFuture<VendorDTO> future = new CompletableFuture<>();
         pendingRequests.put(oauthId, future);
-        requestEmitter.send(String.valueOf(oauthId));
+        JsonObject requestJson = new JsonObject().put("oauthId", oauthId);
+        requestEmitter.send(requestJson);
         return Uni.createFrom().completionStage(future);
     }
 
@@ -37,7 +38,6 @@ public class VendorClientService {
         try {
             vendor = json.mapTo(VendorDTO.class);
         } catch (Exception e) {
-            // handle error, maybe log and ack
             return Uni.createFrom().completionStage(message.ack()).replaceWithVoid();
         }
         int oauthId = vendor.getOauthId();

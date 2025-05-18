@@ -46,22 +46,35 @@ public class Product {
     @JsonProperty("description")
     private String description;
 
+    @Positive(message = "Stock must be a positive number")
+    @JsonProperty("stock")
+    private int stock;
+
     public Product() {
     }
 
-    public Product(int id, String name, Double price, String description) {
+    public Product(int id, String name, Double price, String description, int stock) {
         this.id = id;
         this.name = name;
         this.price = price;
         this.description = description;
-        
+        this.stock = stock;
     }
 
-    public Product(String name, int oauthId, Double price, String description) {
+    public Product(String name, int oauthId, Double price, String description, int stock) {
         this.name = name;
         this.oauthId = oauthId;
         this.price = price;
         this.description = description;
+        this.stock = stock;
+    }
+    public Product(int id, String name, int oauthId, Double price, String description, int stock) {
+        this.id = id;
+        this.name = name;
+        this.oauthId = oauthId;
+        this.price = price;
+        this.description = description;
+        this.stock = stock;
     }
 
     public int getId() {
@@ -93,5 +106,9 @@ public class Product {
 
     public String getDescription() {
         return description;
+    }
+
+    public int getStock() {
+        return stock;
     }
 }
