@@ -11,10 +11,6 @@ public class UpdateProductRequest {
     @NotNull(message = "Product ID must not be null")
     @JsonProperty("id")
     public int id;
-    
-    @NotNull(message = "OAuth ID must not be null")
-    @JsonProperty("oauth_id")
-    public int oauth_id;
 
     @NotBlank(message = "Name must not be blank")
     @Size(max = 100, message = "Name must not exceed 100 characters")
@@ -31,7 +27,6 @@ public class UpdateProductRequest {
     @JsonProperty("description")
     public String description;
 
-    @NotBlank
     @Positive(message = "Stock must be a positive number")
     @JsonProperty("stock")
     public int stock;

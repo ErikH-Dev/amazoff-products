@@ -3,16 +3,8 @@ package entities;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import dto.VendorDTO;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 
 @Entity
 @Table(name = "App_Product")
@@ -46,7 +38,7 @@ public class Product {
     @JsonProperty("description")
     private String description;
 
-    @Positive(message = "Stock must be a positive number")
+    @PositiveOrZero(message = "Stock must be a positive number")
     @JsonProperty("stock")
     private int stock;
 

@@ -8,6 +8,8 @@ import interfaces.IProductRepository;
 import interfaces.IProductService;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
+import org.jboss.logging.Logger;
+import org.jboss.logging.MDC;
 
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +21,7 @@ import dto.UpdateProductRequest;
 
 @ApplicationScoped
 public class ProductService implements IProductService {
+    private static final Logger LOG = Logger.getLogger(ProductService.class);
     private IProductRepository productRepository;
     private VendorClientService vendorClientService;
 
@@ -29,16 +32,26 @@ public class ProductService implements IProductService {
 
     @Override
     public Uni<Product> create(CreateProductRequest productRequest) {
+        LOG.infof("Creating product: name=%s, oauth_id=%d", productRequest.name, productRequest.oauth_id);
         return vendorClientService.getVendorByOauthId(productRequest.oauth_id)
                 .onItem().ifNull().failWith(new VendorNotFoundException(productRequest.oauth_id))
                 .onItem().transform(vendor -> new Product(productRequest.name, productRequest.oauth_id,
                         productRequest.price, productRequest.description, productRequest.stock))
-                .onItem().transformToUni(product -> productRepository.create(product));
+                .onItem().transformToUni(product -> productRepository.create(product)
+                    .invoke(persisted -> {
+                        MDC.put("productId", persisted.getId());
+                        LOG.infof("Product persisted: productId=%d", persisted.getId());
+                        MDC.remove("productId");
+                    }))
+                .onFailure().invoke(e -> LOG.errorf("Failed to create product: %s", e.getMessage()));
     }
 
     @Override
     public Uni<List<Product>> readAll() {
+        LOG.info("Reading all products");
         return productRepository.readAll()
+            .onItem().invoke(products -> LOG.infof("Read %d products", products.size()))
+            .onFailure().invoke(e -> LOG.errorf("Failed to read all products: %s", e.getMessage()))
             .onItem().transformToUni(products ->
                 Uni.combine().all().unis(
                     products.stream()
@@ -52,7 +65,10 @@ public class ProductService implements IProductService {
     
     @Override
     public Uni<List<Product>> readByIds(List<Integer> ids) {
+        LOG.infof("Reading products by ids: %s", ids);
         return productRepository.readByIds(ids)
+            .onItem().invoke(products -> LOG.infof("Read %d products by ids", products.size()))
+            .onFailure().invoke(e -> LOG.errorf("Failed to read products by ids: %s", e.getMessage()))
             .onItem().transformToUni(products ->
                 Uni.combine().all().unis(
                     products.stream()
@@ -66,7 +82,15 @@ public class ProductService implements IProductService {
     
     @Override
     public Uni<Product> read(int id) {
+        MDC.put("productId", id);
+        LOG.infof("Reading product: productId=%d", id);
         return productRepository.read(id)
+            .onItem().invoke(product -> LOG.infof("Product read: productId=%d", product.getId()))
+            .onFailure().invoke(e -> LOG.errorf("Failed to read product: %s", e.getMessage()))
+            .eventually(() -> {
+                MDC.remove("productId");
+                return Uni.createFrom().voidItem();
+            })
             .onItem().transformToUni(product ->
                 vendorClientService.getVendorByOauthId(product.getOauthId())
                     .invoke(product::setVendorDTO)
@@ -76,15 +100,31 @@ public class ProductService implements IProductService {
 
     @Override
     public Uni<Product> update(UpdateProductRequest productRequest) {
-        return vendorClientService.getVendorByOauthId(productRequest.oauth_id)
-                .onItem().ifNull().failWith(new VendorNotFoundException(productRequest.oauth_id))
-                .onItem().transform(vendor -> new Product(productRequest.id, productRequest.name,
-                        productRequest.price, productRequest.description, productRequest.stock))
-                .onItem().transformToUni(product -> productRepository.update(product));
+        MDC.put("productId", productRequest.id);
+        LOG.infof("Updating product: productId=%d", productRequest.id);
+        // Only check if the product exists, do not check oauthId/vendor
+        return productRepository.read(productRequest.id)
+            .onItem().ifNull().failWith(new ProductNotFoundException(productRequest.id))
+            .onItem().transform(existing -> new Product(
+                productRequest.id,
+                productRequest.name,
+                existing.getOauthId(),
+                productRequest.price,
+                productRequest.description,
+                productRequest.stock
+            ))
+            .onItem().transformToUni(product -> productRepository.update(product)
+                .invoke(updated -> LOG.infof("Product updated: productId=%d", updated.getId())))
+            .onFailure().invoke(e -> LOG.errorf("Failed to update product: %s", e.getMessage()))
+            .eventually(() -> {
+                MDC.remove("productId");
+                return Uni.createFrom().voidItem();
+            });
     }
 
     @Override
     public Uni<Void> reserveProductStocks(List<ReserveStockItem> items) {
+        LOG.infof("Reserving stock for items: %s", items);
         List<Integer> ids = items.stream().map(i -> i.productId).toList();
         return productRepository.readByIds(ids)
             .onItem().ifNull().failWith(new ProductNotFoundException(-1))
@@ -116,6 +156,14 @@ public class ProductService implements IProductService {
 
     @Override
     public Uni<Void> delete(int id) {
-        return productRepository.delete(id);
+        MDC.put("productId", id);
+        LOG.infof("Deleting product: productId=%d", id);
+        return productRepository.delete(id)
+            .invoke(() -> LOG.infof("Product deleted: productId=%d", id))
+            .onFailure().invoke(e -> LOG.errorf("Failed to delete product: %s", e.getMessage()))
+            .eventually(() -> {
+                MDC.remove("productId");
+                return Uni.createFrom().voidItem();
+            });
     }
 }
