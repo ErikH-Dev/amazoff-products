@@ -50,20 +50,21 @@
             <artifactId>quarkus-swagger-ui</artifactId>
         </dependency>
 
-        <!-- Database: Reactive PostgreSQL Client -->
+        <!-- MongoDB with Reactive Support -->
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-reactive-pg-client</artifactId>
+            <artifactId>quarkus-mongodb-panache</artifactId>
         </dependency>
 
-        <!-- Persistence: Hibernate Reactive -->
-        <dependency>
-            <groupId>org.hibernate.reactive</groupId>
-            <artifactId>hibernate-reactive-core</artifactId>
-        </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-hibernate-reactive</artifactId>
+            <artifactId>quarkus-mongodb-client</artifactId>
+        </dependency>
+
+        <!-- Elasticsearch -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-elasticsearch-java-client</artifactId>
         </dependency>
 
         <!-- JSON Binding: Jackson -->
@@ -118,15 +119,6 @@
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-jdbc-postgresql</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-smallrye-health</artifactId>
         </dependency>
 
         <!-- Mockito JUnit Jupiter Integration -->

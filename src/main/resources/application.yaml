@@ -5,10 +5,6 @@ quarkus:
   application:
     name: amazoff-products
 
-  hibernate-orm:
-    database:
-      generation: update
-
   # Enable health checks
   smallrye-health:
     root-path: /q/health
@@ -31,11 +27,27 @@ mp:
         connector: smallrye-rabbitmq
       reserve-stock-responses:
         connector: smallrye-rabbitmq
+      # Add product events for CQRS synchronization
+      product-events:
+        connector: smallrye-rabbitmq
+        exchange:
+          name: product.events
+          type: topic
+        routing-key: product.sync
+        
     incoming:
       get-vendor-responses:
         connector: smallrye-rabbitmq
       reserve-stock-requests:
         connector: smallrye-rabbitmq
+      # Add product sync for Elasticsearch updates
+      product-sync:
+        connector: smallrye-rabbitmq
+        queue:
+          name: product.sync
+        exchange:
+          name: product.events
+        routing-key: product.sync
 
     # Global RabbitMQ connector configuration with environment variable overrides
     connector:
@@ -48,18 +60,15 @@ mp:
 # Development profile configuration
 "%dev":
   quarkus:
-    datasource:
-      db-kind: postgresql
-      username: amazoff_user
-      password: amazoff_password
-      reactive:
-        url: vertx-reactive:postgresql://localhost:5432/amazoff_products
-    hibernate-orm:
-      log:
-        sql: true
-      reactive:
-        database:
-          generation: drop-and-create
+    # MongoDB configuration for development
+    mongodb:
+      connection-string: mongodb://admin:password@localhost:27017/amazoff_products?authSource=admin
+      database: amazoff_products
+      
+    # Elasticsearch configuration for development
+    elasticsearch:
+      hosts: localhost:9200
+      
     log:
       console:
         level: DEBUG
@@ -77,17 +86,15 @@ mp:
 # Test profile configuration
 "%test":
   quarkus:
-    datasource:
-      db-kind: h2
-      jdbc:
-        url: jdbc:h2:mem:amazoff_products_test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-        driver: org.h2.Driver
-      username: sa
-      password: ""
-    hibernate-orm:
-      reactive:
-        database:
-          generation: drop-and-create
+    # Use embedded MongoDB for testing
+    mongodb:
+      connection-string: mongodb://localhost:27017/amazoff_products_test
+      database: amazoff_products_test
+      
+    # Use embedded Elasticsearch for testing (or testcontainers)
+    elasticsearch:
+      hosts: localhost:9200
+      
     log:
       console:
         level: DEBUG
@@ -95,15 +102,17 @@ mp:
 # Production profile configuration
 "%prod":
   quarkus:
-    datasource:
-      db-kind: postgresql
-      username: ${DB_USERNAME:postgres}
-      password: ${DB_PASSWORD:postgres}
-      reactive:
-        url: vertx-reactive:postgresql://${DB_HOST:products-db}:${DB_PORT:5432}/${DB_NAME:amazoff}
-    hibernate-orm:
-      database:
-        generation: update
+    # MongoDB configuration for production
+    mongodb:
+      connection-string: mongodb://${MONGO_USERNAME:admin}:${MONGO_PASSWORD:password}@${MONGO_HOST:mongodb}:${MONGO_PORT:27017}/${MONGO_DATABASE:amazoff_products}?authSource=admin
+      database: ${MONGO_DATABASE:amazoff_products}
+      
+    # Elasticsearch configuration for production
+    elasticsearch:
+      hosts: ${ELASTICSEARCH_HOSTS:elasticsearch:9200}
+      username: ${ELASTICSEARCH_USERNAME:}
+      password: ${ELASTICSEARCH_PASSWORD:}
+      
     log:
       console:
         level: INFO
@@ -113,3 +122,13 @@ mp:
       path: /q/swagger-ui
     smallrye-openapi:
       path: /q/openapi
+
+  # Production RabbitMQ configuration
+  mp:
+    messaging:
+      connector:
+        smallrye-rabbitmq:
+          username: ${RABBITMQ_USERNAME:guest}
+          password: ${RABBITMQ_PASSWORD:guest}
+          host: ${RABBITMQ_HOST:rabbitmq}
+          port: ${RABBITMQ_PORT:5672}
