@@ -11,7 +11,6 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import org.jboss.logging.Logger;
 import java.time.Duration;
 
-
 import dto.VendorDTO;
 import exceptions.errors.VendorNotFoundException;
 
@@ -29,28 +28,26 @@ public class VendorClientService {
 
     private final ConcurrentHashMap<Integer, CompletableFuture<VendorDTO>> pendingRequests = new ConcurrentHashMap<>();
 
-public Uni<VendorDTO> getVendorByOauthId(int oauthId) {
-    LOG.infof("Requesting vendor details for oauthId=%d", oauthId);
-    CompletableFuture<VendorDTO> future = new CompletableFuture<>();
-    pendingRequests.put(oauthId, future);
-    JsonObject requestJson = new JsonObject().put("oauthId", oauthId);
-    
-    try {
-        requestEmitter.send(requestJson);
-    } catch (Exception e) {
-        LOG.errorf("Failed to send vendor request: %s", e.getMessage());
-        pendingRequests.remove(oauthId);
-        return Uni.createFrom().failure(e);
-    }
+    public Uni<VendorDTO> getVendorByOauthId(int oauthId) {
+        LOG.infof("Requesting vendor details for oauthId=%d", oauthId);
+        CompletableFuture<VendorDTO> future = new CompletableFuture<>();
+        pendingRequests.put(oauthId, future);
+        JsonObject requestJson = new JsonObject().put("oauthId", oauthId);
 
-    return Uni.createFrom().completionStage(future)
-            .ifNoItem().after(Duration.ofSeconds(10)).failWith(new RuntimeException("Timeout waiting for vendor response for oauthId=" + oauthId))
-            .onFailure().invoke(e -> {
-                // Clean up pending request on timeout or failure
-                pendingRequests.remove(oauthId);
-                LOG.errorf("Failed to get vendor for oauthId=%d: %s", oauthId, e.getMessage());
-            });
-}
+        try {
+            requestEmitter.send(requestJson);
+        } catch (Exception e) {
+            LOG.errorf("Failed to send vendor request: %s", e.getMessage());
+            pendingRequests.remove(oauthId);
+            return Uni.createFrom().failure(e);
+        }
+
+        return Uni.createFrom().completionStage(future)
+                .onFailure().invoke(e -> {
+                    pendingRequests.remove(oauthId);
+                    LOG.errorf("Failed to get vendor for oauthId=%d: %s", oauthId, e.getMessage());
+                });
+    }
 
     @Incoming("get-vendor-responses")
     public Uni<Void> onVendorResponse(Message<JsonObject> message) {
