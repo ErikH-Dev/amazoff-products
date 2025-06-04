@@ -33,6 +33,8 @@ mp:
         exchange:
           name: product.events
           type: topic
+          durable: true
+          declare: true
         routing-key: product.sync
         
     incoming:
@@ -45,8 +47,13 @@ mp:
         connector: smallrye-rabbitmq
         queue:
           name: product.sync
+          durable: true
+          declare: true
         exchange:
           name: product.events
+          type: topic
+          durable: true
+          declare: true
         routing-key: product.sync
 
     # Global RabbitMQ connector configuration with environment variable overrides

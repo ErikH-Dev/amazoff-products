@@ -30,12 +30,14 @@ public class ProductService implements IProductService {
     private IProductRepository productRepository;
     private VendorClientService vendorClientService;
     private IProductSearchRepository productSearchRepository;
+    private ProductEventPublisher eventPublisher;
 
     public ProductService(IProductRepository productRepository, IProductSearchRepository productSearchRepository,
-            VendorClientService vendorClientService) {
+            VendorClientService vendorClientService, ProductEventPublisher eventPublisher) {
         this.productRepository = productRepository;
         this.productSearchRepository = productSearchRepository;
         this.vendorClientService = vendorClientService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -47,15 +49,12 @@ public class ProductService implements IProductService {
                             productRequest.price, productRequest.description, productRequest.stock);
 
                     return productRepository.create(product)
-                            .onItem().transformToUni(persisted -> {
-                                ProductDocument doc = new ProductDocument(persisted);
-                                // FIX: Change 'searchRepository' to 'productSearchRepository'
-                                return productSearchRepository.indexProduct(doc)
-                                        .map(v -> persisted);
+                            .onItem().invoke(persisted -> {
+                                eventPublisher.publishProductCreated(persisted);
                             })
                             .onItem().transform(persisted -> ProductResponse.from(persisted, vendor));
                 });
-            }
+    }
 
     @Override
     public Uni<List<ProductResponse>> readAll() {
@@ -214,23 +213,16 @@ public class ProductService implements IProductService {
         return productRepository.read(productRequest.id)
                 .onItem().ifNull().failWith(new ProductNotFoundException(productRequest.id))
                 .onItem().transformToUni(existing -> {
-                    // Update existing product fields
                     existing.name = productRequest.name;
                     existing.price = productRequest.price;
                     existing.description = productRequest.description;
                     existing.stock = productRequest.stock;
 
                     return productRepository.update(existing)
-                            .onItem().transformToUni(updated -> {
-                                // Also update in Elasticsearch
-                                ProductDocument doc = new ProductDocument(updated);
-                                return productSearchRepository.indexProduct(doc)
-                                        .map(v -> updated);
+                            .onItem().invoke(updated -> {
+                                eventPublisher.publishProductUpdated(updated);
                             })
-                            .onItem()
-                            .invoke(updated -> LOG.infof("Product updated: productId=%s", updated.getProductId()))
-                            .onItem()
-                            .transformToUni(updated -> vendorClientService.getVendorByOauthId(updated.getOauthId())
+                            .onItem().transformToUni(updated -> vendorClientService.getVendorByOauthId(updated.getOauthId())
                                     .onItem().transform(vendor -> ProductResponse.from(updated, vendor)));
                 })
                 .onFailure().invoke(e -> LOG.errorf("Failed to update product: %s", e.getMessage()))
@@ -239,18 +231,21 @@ public class ProductService implements IProductService {
                     return Uni.createFrom().voidItem();
                 });
     }
+
     @Override
     public Uni<Void> reserveProductStocks(List<ReserveStockItem> items) {
         throw new UnsupportedOperationException("ReserveProductStocks is not implemented yet");
     }
-    // }
 
     @Override
-    public Uni<Void> delete(String id) { // Changed from int to String
+    public Uni<Void> delete(String id) {
         MDC.put("productId", id);
         LOG.infof("Deleting product: productId=%s", id);
         return productRepository.delete(id)
-                .invoke(() -> LOG.infof("Product deleted: productId=%s", id))
+                .invoke(() -> {
+                    eventPublisher.publishProductDeleted(id);
+                    LOG.infof("Product deleted: productId=%s", id);
+                })
                 .onFailure().invoke(e -> LOG.errorf("Failed to delete product: %s", e.getMessage()))
                 .eventually(() -> {
                     MDC.remove("productId");
