@@ -5,10 +5,6 @@ quarkus:
   application:
     name: amazoff-products
 
-  hibernate-orm:
-    database:
-      generation: update
-
   # Enable health checks
   smallrye-health:
     root-path: /q/health
@@ -16,6 +12,20 @@ quarkus:
   # Disable separate management interface - keep everything on main port
   management:
     enabled: false
+
+  # OIDC Configuration
+  oidc:
+    auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL:http://192.168.49.2:30080}/realms/${KEYCLOAK_REALM:amazoff}
+    client-id: ${KEYCLOAK_CLIENT_ID:amazoff-backend}
+    credentials:
+      secret: ${KEYCLOAK_CLIENT_SECRET:your-client-secret}
+    tls:
+      verification: ${KEYCLOAK_TLS_VERIFICATION:none}
+    token:
+      issuer: ${KEYCLOAK_TOKEN_ISSUER:http://192.168.49.2:30080}/realms/${KEYCLOAK_REALM:amazoff}
+
+  smallrye-jwt:
+    enabled: true
 
 # Micrometer configuration for Prometheus
 micrometer:
@@ -31,11 +41,47 @@ mp:
         connector: smallrye-rabbitmq
       reserve-stock-responses:
         connector: smallrye-rabbitmq
+      # Add product events for CQRS synchronization
+      product-events:
+        connector: smallrye-rabbitmq
+        exchange:
+          name: product.events
+          type: topic
+          durable: true
+          declare: true
+        routing-key: product.sync
+        
+      release-stock-responses:
+        connector: smallrye-rabbitmq
+      get-products-responses:
+        connector: smallrye-rabbitmq
     incoming:
       get-vendor-responses:
         connector: smallrye-rabbitmq
+        auto-acknowledgment: true
       reserve-stock-requests:
         connector: smallrye-rabbitmq
+        auto-acknowledgment: true
+      # Add product sync for Elasticsearch updates
+      product-sync:
+        connector: smallrye-rabbitmq
+        queue:
+          name: product.sync
+          durable: true
+          declare: true
+        exchange:
+          name: product.events
+          type: topic
+          durable: true
+          declare: true
+        routing-key: product.sync
+        auto-acknowledgment: true
+      release-stock-requests:
+        connector: smallrye-rabbitmq
+        auto-acknowledgment: true
+      get-products-requests:
+        connector: smallrye-rabbitmq
+        auto-acknowledgment: true
 
     # Global RabbitMQ connector configuration with environment variable overrides
     connector:
@@ -48,21 +94,27 @@ mp:
 # Development profile configuration
 "%dev":
   quarkus:
-    datasource:
-      db-kind: postgresql
-      username: amazoff_user
-      password: amazoff_password
-      reactive:
-        url: vertx-reactive:postgresql://localhost:5432/amazoff_products
-    hibernate-orm:
-      log:
-        sql: true
-      reactive:
-        database:
-          generation: drop-and-create
+    # MongoDB configuration for development
+    mongodb:
+      connection-string: mongodb://admin:password@localhost:27017/amazoff_products?authSource=admin
+      database: amazoff_products
+      
+    # Elasticsearch configuration for development
+    elasticsearch:
+      hosts: localhost:9200
+      
     log:
       console:
         level: DEBUG
+    
+    # Dev OIDC Configuration
+    oidc:
+      auth-server-url: http://192.168.49.2:30080/realms/amazoff
+      client-id: amazoff-backend
+      tls:
+        verification: none
+      token:
+        issuer: http://192.168.49.2:30080/realms/amazoff
 
   # Override RabbitMQ settings for development
   mp:
@@ -77,17 +129,15 @@ mp:
 # Test profile configuration
 "%test":
   quarkus:
-    datasource:
-      db-kind: h2
-      jdbc:
-        url: jdbc:h2:mem:amazoff_products_test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-        driver: org.h2.Driver
-      username: sa
-      password: ""
-    hibernate-orm:
-      reactive:
-        database:
-          generation: drop-and-create
+    # Use embedded MongoDB for testing
+    mongodb:
+      connection-string: mongodb://localhost:27017/amazoff_products_test
+      database: amazoff_products_test
+      
+    # Use embedded Elasticsearch for testing (or testcontainers)
+    elasticsearch:
+      hosts: localhost:9200
+      
     log:
       console:
         level: DEBUG
@@ -95,15 +145,16 @@ mp:
 # Production profile configuration
 "%prod":
   quarkus:
-    datasource:
-      db-kind: postgresql
-      username: ${DB_USERNAME:postgres}
-      password: ${DB_PASSWORD:postgres}
-      reactive:
-        url: vertx-reactive:postgresql://${DB_HOST:products-db}:${DB_PORT:5432}/${DB_NAME:amazoff}
-    hibernate-orm:
-      database:
-        generation: update
+    mongodb:
+      connection-string: mongodb://${MONGO_USERNAME:amazoff_mongodb_user}:${MONGO_PASSWORD:amazoff_mongodb_password}@${MONGO_HOST:mongodb}:${MONGO_PORT:27017}/${MONGO_DATABASE:amazoff_products}?authSource=admin
+      database: ${MONGO_DATABASE:amazoff_products}
+      
+    # Elasticsearch configuration for production
+    elasticsearch:
+      hosts: ${ELASTICSEARCH_HOSTS:elasticsearch:9200}
+      username: ${ELASTICSEARCH_USERNAME:}
+      password: ${ELASTICSEARCH_PASSWORD:}
+      
     log:
       console:
         level: INFO
@@ -113,3 +164,24 @@ mp:
       path: /q/swagger-ui
     smallrye-openapi:
       path: /q/openapi
+      
+    # Prod OIDC Configuration
+    oidc:
+      auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL}/realms/${KEYCLOAK_REALM}
+      client-id: ${KEYCLOAK_CLIENT_ID}
+      credentials:
+        secret: ${KEYCLOAK_CLIENT_SECRET}
+      tls:
+        verification: ${KEYCLOAK_TLS_VERIFICATION:required}
+      token:
+        issuer: ${KEYCLOAK_TOKEN_ISSUER}/realms/${KEYCLOAK_REALM}
+
+  # Production RabbitMQ configuration
+  mp:
+    messaging:
+      connector:
+        smallrye-rabbitmq:
+          username: ${RABBITMQ_USERNAME:guest}
+          password: ${RABBITMQ_PASSWORD:guest}
+          host: ${RABBITMQ_HOST:rabbitmq}
+          port: ${RABBITMQ_PORT:5672}

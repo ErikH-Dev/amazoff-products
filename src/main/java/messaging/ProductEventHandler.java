@@ -22,9 +22,8 @@ public class ProductEventHandler {
     @Incoming("get-products-requests")
     @Outgoing("get-products-responses")
     public Uni<Message<JsonObject>> handleGetProducts(Message<JsonObject> request) {
-        List<Integer> ids = request.getPayload().getJsonArray("productIds").stream()
+        List<String> ids = request.getPayload().getJsonArray("productIds").stream()
                 .map(Object::toString)
-                .map(Integer::valueOf)
                 .toList();
         LOG.infof("Handling get-products request for ids=%s", ids);
         

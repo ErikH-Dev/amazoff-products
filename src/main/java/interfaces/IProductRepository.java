@@ -9,9 +9,9 @@ public interface IProductRepository {
 
     Uni<Product> create(Product product);
     Uni<List<Product>> readAll();
-    Uni<List<Product>> readByIds(List<Integer> ids);
-    Uni<Product> read(int id);
+    Uni<List<Product>> readByIds(List<String> ids);
+    Uni<Product> read(String id);
     Uni<Product> update(Product product);
-    Uni<Void> delete(int id);
+    Uni<Void> delete(String id);
 
 }

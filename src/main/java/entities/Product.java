@@ -1,91 +1,66 @@
 package entities;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import dto.VendorDTO;
-import jakarta.persistence.*;
+import io.quarkus.mongodb.panache.common.MongoEntity;
+import io.quarkus.mongodb.panache.reactive.ReactivePanacheMongoEntity;
 import jakarta.validation.constraints.*;
+import org.bson.codecs.pojo.annotations.BsonProperty;
+import org.bson.types.ObjectId;
 
-@Entity
-@Table(name = "App_Product")
-public class Product {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @NotNull(message = "Product ID must not be null")
-    @JsonProperty("product_id")
-    private int id;
+@MongoEntity(collection = "products")
+public class Product extends ReactivePanacheMongoEntity {
 
-    @NotNull(message = "oauthId must not be null")
-    @JsonProperty("oauth_id")
-    private int oauthId;
-    
-    @Transient
-    @JsonProperty("vendor")
-    private VendorDTO vendorDTO;
+    @NotNull(message = "keycloakId must not be null")
+    @BsonProperty("keycloak_id")
+    @JsonProperty("keycloak_id")
+    public String keycloakId;
 
     @NotBlank(message = "Name must not be blank")
     @Size(max = 100, message = "Name must not exceed 100 characters")
     @JsonProperty("name")
-    private String name;
+    public String name;
 
     @NotNull(message = "Price must not be null")
     @Positive(message = "Price must be a positive number")
     @JsonProperty("price")
-    private Double price;
+    public Double price;
 
     @NotBlank(message = "Description must not be blank")
     @Size(max = 500, message = "Description cannot be longer than 500 characters")
     @JsonProperty("description")
-    private String description;
+    public String description;
 
     @PositiveOrZero(message = "Stock must be a positive number")
     @JsonProperty("stock")
-    private int stock;
+    public int stock;
 
     public Product() {
     }
 
-    public Product(int id, String name, Double price, String description, int stock) {
+    public Product(String name, String keycloakId, Double price, String description, int stock) {
+        this.name = name;
+        this.keycloakId = keycloakId;
+        this.price = price;
+        this.description = description;
+        this.stock = stock;
+    }
+
+    public Product(ObjectId id, String name, String keycloakId, Double price, String description, int stock) {
         this.id = id;
         this.name = name;
+        this.keycloakId = keycloakId;
         this.price = price;
         this.description = description;
         this.stock = stock;
     }
 
-    public Product(String name, int oauthId, Double price, String description, int stock) {
-        this.name = name;
-        this.oauthId = oauthId;
-        this.price = price;
-        this.description = description;
-        this.stock = stock;
-    }
-    public Product(int id, String name, int oauthId, Double price, String description, int stock) {
-        this.id = id;
-        this.name = name;
-        this.oauthId = oauthId;
-        this.price = price;
-        this.description = description;
-        this.stock = stock;
+    @JsonProperty("product_id")
+    public String getProductId() {
+        return this.id != null ? this.id.toString() : null;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public int getOauthId() {
-        return oauthId;
-    }
-
-    public VendorDTO getVendorDTO() {
-        return vendorDTO;
-    }
-    
-    public void setVendorDTO(VendorDTO vendorDTO) {
-        this.vendorDTO = vendorDTO;
-        if (vendorDTO != null) {
-            this.oauthId = vendorDTO.getOauthId();
-        }
+    public String getKeycloakId() {
+        return keycloakId;
     }
 
     public String getName() {

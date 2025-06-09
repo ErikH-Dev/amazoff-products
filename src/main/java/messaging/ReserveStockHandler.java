@@ -10,8 +10,8 @@ import dto.ReserveStockItem;
 import dto.ReserveStockRequest;
 import dto.StockReservationFailed;
 import dto.StockReserved;
-import exceptions.errors.InsufficientStockException;
 import exceptions.errors.ProductNotFoundException;
+import exceptions.errors.InsufficientStockException;
 import interfaces.IProductService;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
@@ -40,19 +40,25 @@ public class ReserveStockHandler {
             .map(v -> {
                 LOG.info("Stock reserved successfully");
                 StockReserved reserved = new StockReserved(items);
-                JsonObject response = JsonObject.mapFrom(reserved);
-                return Message.of(response);
-            })
-            .onFailure(ProductNotFoundException.class).recoverWithItem(e -> {
-                LOG.warn("Stock reservation failed: Product not found");
-                StockReservationFailed failed = new StockReservationFailed(items, "Product not found");
-                JsonObject response = JsonObject.mapFrom(failed);
+                JsonObject response = JsonObject.mapFrom(reserved).put("status", "StockReserved");
                 return Message.of(response);
             })
             .onFailure(InsufficientStockException.class).recoverWithItem(e -> {
-                LOG.warn("Stock reservation failed: Insufficient stock");
-                StockReservationFailed failed = new StockReservationFailed(items, "Insufficient stock");
-                JsonObject response = JsonObject.mapFrom(failed);
+                LOG.warnf("Stock reservation failed due to insufficient stock: %s", e.getMessage());
+                StockReservationFailed failed = new StockReservationFailed(items, e.getMessage());
+                JsonObject response = JsonObject.mapFrom(failed).put("status", "StockReservationFailed");
+                return Message.of(response);
+            })
+            .onFailure(ProductNotFoundException.class).recoverWithItem(e -> {
+                LOG.warnf("Stock reservation failed: Product not found: %s", e.getMessage());
+                StockReservationFailed failed = new StockReservationFailed(items, "Product not found: " + e.getMessage());
+                JsonObject response = JsonObject.mapFrom(failed).put("status", "StockReservationFailed");
+                return Message.of(response);
+            })
+            .onFailure().recoverWithItem(e -> {
+                LOG.errorf("Stock reservation failed with unexpected error: %s", e.getMessage());
+                StockReservationFailed failed = new StockReservationFailed(items, "Internal error: " + e.getMessage());
+                JsonObject response = JsonObject.mapFrom(failed).put("status", "StockReservationFailed");
                 return Message.of(response);
             });
     }

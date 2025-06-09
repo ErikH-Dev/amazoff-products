@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: amazoff-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: amazoff_products
+    volumes:
+      - amazoff_mongo_data:/data/db
+    networks:
+      - amazoff-network
+
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: amazoff-elasticsearch
+    restart: unless-stopped
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - amazoff_es_data:/usr/share/elasticsearch/data
+    networks:
+      - amazoff-network
+
+volumes:
+  amazoff_mongo_data:
+    driver: local
+  amazoff_es_data:
+    driver: local
+
+networks:
+  amazoff-network:
+    driver: bridge
