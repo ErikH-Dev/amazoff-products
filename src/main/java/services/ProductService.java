@@ -1,8 +1,20 @@
 package services;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.jboss.logging.Logger;
+import org.jboss.logging.MDC;
+
+import dto.CreateProductRequest;
+import dto.ProductResponse;
+import dto.ReserveStockItem;
+import dto.UpdateProductRequest;
+import dto.VendorDTO;
 import entities.Product;
 import entities.ProductDocument;
-import dto.ProductResponse;
 import exceptions.errors.InsufficientStockException;
 import exceptions.errors.ProductNotFoundException;
 import exceptions.errors.VendorNotFoundException;
@@ -11,18 +23,7 @@ import interfaces.IProductSearchRepository;
 import interfaces.IProductService;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.jboss.logging.Logger;
-import org.jboss.logging.MDC;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import dto.CreateProductRequest;
-import dto.ReserveStockItem;
-import dto.UpdateProductRequest;
-import dto.VendorDTO;
+import jakarta.validation.Valid;
 
 @ApplicationScoped
 public class ProductService implements IProductService {
@@ -41,18 +42,17 @@ public class ProductService implements IProductService {
     }
 
     @Override
-    public Uni<ProductResponse> create(CreateProductRequest productRequest) {
-        return vendorClientService.getVendorByOauthId(productRequest.oauth_id)
-                .onItem().ifNull().failWith(new VendorNotFoundException(productRequest.oauth_id))
+    public Uni<ProductResponse> create(@Valid Product product) {
+        LOG.infof("Creating product: name=%s, keycloakId=%s", product.name, product.keycloakId);
+        return vendorClientService.getVendorByKeycloakId(product.keycloakId)
+                .onItem().ifNull().failWith(new VendorNotFoundException(product.keycloakId))
                 .onItem().transformToUni(vendor -> {
-                    Product product = new Product(productRequest.name, productRequest.oauth_id,
-                            productRequest.price, productRequest.description, productRequest.stock);
-
                     return productRepository.create(product)
                             .onItem().invoke(persisted -> {
                                 eventPublisher.publishProductCreated(persisted);
+                                LOG.infof("Product created: productId=%s", persisted.getProductId());
                             })
-                            .onItem().transform(persisted -> ProductResponse.from(persisted, vendor));
+                            .onItem().transform(persisted -> new ProductResponse(persisted, vendor));
                 });
     }
 
@@ -62,129 +62,33 @@ public class ProductService implements IProductService {
         return productRepository.readAll()
                 .onItem().invoke(products -> LOG.infof("Read %d products", products.size()))
                 .onFailure().invoke(e -> LOG.errorf("Failed to read all products: %s", e.getMessage()))
-                .onItem().transformToUni(products -> {
-                    if (products.isEmpty()) {
-                        return Uni.createFrom().item(List.of());
-                    }
-
-                    // Get unique oauth IDs to avoid duplicate vendor requests
-                    List<Integer> uniqueOauthIds = products.stream()
-                            .map(Product::getOauthId)
-                            .distinct()
-                            .collect(Collectors.toList());
-
-                    LOG.infof("Found %d unique vendors for %d products", uniqueOauthIds.size(), products.size());
-
-                    // Fetch all vendors concurrently
-                    List<Uni<VendorDTO>> vendorUnis = uniqueOauthIds.stream()
-                            .map(oauthId -> vendorClientService.getVendorByOauthId(oauthId)
-                                    .onFailure().recoverWithItem(() -> {
-                                        LOG.warnf(
-                                                "Failed to fetch vendor for oauthId=%d, continuing without vendor info",
-                                                oauthId);
-                                        return null;
-                                    }))
-                            .collect(Collectors.toList());
-
-                    return Uni.combine().all().unis(vendorUnis)
-                            .combinedWith(vendorList -> {
-                                // Create a map of oauthId -> VendorDTO for quick lookup
-                                Map<Integer, VendorDTO> vendorMap = new HashMap<>();
-                                for (int i = 0; i < uniqueOauthIds.size(); i++) {
-                                    VendorDTO vendor = (VendorDTO) vendorList.get(i);
-                                    if (vendor != null) {
-                                        vendorMap.put(uniqueOauthIds.get(i), vendor);
-                                    }
-                                }
-
-                                // Create ProductResponse objects with vendor information
-                                return products.stream()
-                                        .map(product -> {
-                                            VendorDTO vendor = vendorMap.get(product.getOauthId());
-                                            if (vendor != null) {
-                                                LOG.debugf("Set vendor info for product %s", product.getProductId());
-                                            } else {
-                                                LOG.warnf("No vendor info available for product %s (oauthId=%d)",
-                                                        product.getProductId(), product.getOauthId());
-                                            }
-                                            return ProductResponse.from(product, vendor);
-                                        })
-                                        .collect(Collectors.toList());
-                            });
-                });
+                .onItem().transformToUni(this::enrichWithVendorInfo);
     }
 
     @Override
-    public Uni<List<ProductResponse>> readByIds(List<String> ids) { // Changed from List<Integer> to List<String>
+    public Uni<List<ProductResponse>> readByIds(List<String> ids) {
         LOG.infof("Reading products by ids: %s", ids);
         return productRepository.readByIds(ids)
                 .onItem().invoke(products -> LOG.infof("Read %d products by ids", products.size()))
                 .onFailure().invoke(e -> LOG.errorf("Failed to read products by ids: %s", e.getMessage()))
-                .onItem().transformToUni(products -> {
-                    if (products.isEmpty()) {
-                        return Uni.createFrom().item(List.of());
-                    }
-
-                    // Get unique oauth IDs to avoid duplicate vendor requests
-                    List<Integer> uniqueOauthIds = products.stream()
-                            .map(Product::getOauthId)
-                            .distinct()
-                            .collect(Collectors.toList());
-
-                    LOG.infof("Found %d unique vendors for %d products", uniqueOauthIds.size(), products.size());
-
-                    // Fetch all vendors concurrently
-                    List<Uni<VendorDTO>> vendorUnis = uniqueOauthIds.stream()
-                            .map(oauthId -> vendorClientService.getVendorByOauthId(oauthId)
-                                    .onFailure().recoverWithItem(() -> {
-                                        LOG.warnf(
-                                                "Failed to fetch vendor for oauthId=%d, continuing without vendor info",
-                                                oauthId);
-                                        return null;
-                                    }))
-                            .collect(Collectors.toList());
-
-                    return Uni.combine().all().unis(vendorUnis)
-                            .combinedWith(vendorList -> {
-                                // Create a map of oauthId -> VendorDTO for quick lookup
-                                Map<Integer, VendorDTO> vendorMap = new HashMap<>();
-                                for (int i = 0; i < uniqueOauthIds.size(); i++) {
-                                    VendorDTO vendor = (VendorDTO) vendorList.get(i);
-                                    if (vendor != null) {
-                                        vendorMap.put(uniqueOauthIds.get(i), vendor);
-                                    }
-                                }
-
-                                // Create ProductResponse objects with vendor information
-                                return products.stream()
-                                        .map(product -> {
-                                            VendorDTO vendor = vendorMap.get(product.getOauthId());
-                                            if (vendor != null) {
-                                                LOG.debugf("Set vendor info for product %s", product.getProductId());
-                                            } else {
-                                                LOG.warnf("No vendor info available for product %s (oauthId=%d)",
-                                                        product.getProductId(), product.getOauthId());
-                                            }
-                                            return ProductResponse.from(product, vendor);
-                                        })
-                                        .collect(Collectors.toList());
-                            });
-                });
+                .onItem().transformToUni(this::enrichWithVendorInfo);
     }
 
     @Override
-    public Uni<ProductResponse> read(String id) { // Changed from int to String
+    public Uni<ProductResponse> read(String id) {
         MDC.put("productId", id);
         LOG.infof("Reading product: productId=%s", id);
         return productRepository.read(id)
+                .onItem().ifNull().failWith(new ProductNotFoundException(id))
                 .onItem().invoke(product -> LOG.infof("Product read: productId=%s", product.getProductId()))
                 .onFailure().invoke(e -> LOG.errorf("Failed to read product: %s", e.getMessage()))
+                .onItem().transformToUni(product -> 
+                    vendorClientService.getVendorByKeycloakId(product.getKeycloakId())
+                            .onItem().transform(vendor -> new ProductResponse(product, vendor)))
                 .eventually(() -> {
                     MDC.remove("productId");
                     return Uni.createFrom().voidItem();
-                })
-                .onItem().transformToUni(product -> vendorClientService.getVendorByOauthId(product.getOauthId())
-                        .onItem().transform(vendor -> ProductResponse.from(product, vendor)));
+                });
     }
 
     @Override
@@ -201,29 +105,31 @@ public class ProductService implements IProductService {
                             .map(ProductDocument::toProduct)
                             .collect(Collectors.toList());
 
-                    // Get vendor information (same logic as readAll)
                     return enrichWithVendorInfo(products);
                 });
     }
 
     @Override
-    public Uni<ProductResponse> update(UpdateProductRequest productRequest) {
-        MDC.put("productId", productRequest.id);
-        LOG.infof("Updating product: productId=%s", productRequest.id);
-        return productRepository.read(productRequest.id)
-                .onItem().ifNull().failWith(new ProductNotFoundException(productRequest.id))
+    public Uni<ProductResponse> update(Product product) {
+        MDC.put("productId", product.id.toString());
+        LOG.infof("Updating product: productId=%s", product.id);
+        return productRepository.read(product.id.toString())
+                .onItem().ifNull().failWith(new ProductNotFoundException(product.id.toString()))
                 .onItem().transformToUni(existing -> {
-                    existing.name = productRequest.name;
-                    existing.price = productRequest.price;
-                    existing.description = productRequest.description;
-                    existing.stock = productRequest.stock;
+                    // Update the existing product with new values
+                    existing.name = product.name;
+                    existing.price = product.price;
+                    existing.description = product.description;
+                    existing.stock = product.stock;
 
                     return productRepository.update(existing)
                             .onItem().invoke(updated -> {
                                 eventPublisher.publishProductUpdated(updated);
+                                LOG.infof("Product updated: productId=%s", updated.getProductId());
                             })
-                            .onItem().transformToUni(updated -> vendorClientService.getVendorByOauthId(updated.getOauthId())
-                                    .onItem().transform(vendor -> ProductResponse.from(updated, vendor)));
+                            .onItem().transformToUni(updated -> 
+                                vendorClientService.getVendorByKeycloakId(updated.getKeycloakId())
+                                        .onItem().transform(vendor -> new ProductResponse(updated, vendor)));
                 })
                 .onFailure().invoke(e -> LOG.errorf("Failed to update product: %s", e.getMessage()))
                 .eventually(() -> {
@@ -233,16 +139,11 @@ public class ProductService implements IProductService {
     }
 
     @Override
-    public Uni<Void> reserveProductStocks(List<ReserveStockItem> items) {
-        throw new UnsupportedOperationException("ReserveProductStocks is not implemented yet");
-    }
-
-    @Override
     public Uni<Void> delete(String id) {
         MDC.put("productId", id);
         LOG.infof("Deleting product: productId=%s", id);
         return productRepository.delete(id)
-                .invoke(() -> {
+                .onItem().invoke(() -> {
                     eventPublisher.publishProductDeleted(id);
                     LOG.infof("Product deleted: productId=%s", id);
                 })
@@ -253,50 +154,133 @@ public class ProductService implements IProductService {
                 });
     }
 
+    @Override
+    public Uni<Void> reserveProductStocks(List<ReserveStockItem> items) {
+        LOG.infof("Reserving stock for items: %s", items);
+        List<String> ids = items.stream().map(i -> i.productId).toList();
+        return productRepository.readByIds(ids)
+                .onItem().ifNull().failWith(new ProductNotFoundException("unknown"))
+                .onItem().transformToUni(products -> {
+                    Map<String, Product> productMap = new HashMap<>();
+                    for (Product p : products) {
+                        productMap.put(p.getProductId(), p);
+                    }
+
+                    // Validate all items before making any changes
+                    for (ReserveStockItem item : items) {
+                        Product p = productMap.get(item.productId);
+                        if (p == null) {
+                            return Uni.createFrom().failure(new ProductNotFoundException(item.productId));
+                        }
+                        if (p.getStock() < item.quantity) {
+                            return Uni.createFrom().failure(
+                                    new InsufficientStockException(item.productId, item.quantity, p.getStock()));
+                        }
+                    }
+
+                    // Update stock for all items
+                    List<Uni<Product>> updates = items.stream()
+                            .map(item -> {
+                                Product p = productMap.get(item.productId);
+                                Product updated = new Product(
+                                        p.getName(), 
+                                        p.getKeycloakId(), 
+                                        p.getPrice(), 
+                                        p.getDescription(),
+                                        p.getStock() - item.quantity);
+                                updated.id = p.id; // Preserve the ObjectId
+                                return productRepository.update(updated);
+                            })
+                            .toList();
+                    
+                    return Uni.combine().all().unis(updates).discardItems();
+                });
+    }
+
+    @Override
+    public Uni<Void> releaseProductStocks(List<ReserveStockItem> items) {
+        LOG.infof("Releasing stock for items: %s", items);
+        List<String> ids = items.stream().map(i -> i.productId).toList();
+        return productRepository.readByIds(ids)
+                .onItem().ifNull().failWith(new ProductNotFoundException("unknown"))
+                .onItem().transformToUni(products -> {
+                    Map<String, Product> productMap = new HashMap<>();
+                    for (Product p : products) {
+                        productMap.put(p.getProductId(), p);
+                    }
+
+                    // Validate all products exist
+                    for (ReserveStockItem item : items) {
+                        Product p = productMap.get(item.productId);
+                        if (p == null) {
+                            return Uni.createFrom().failure(new ProductNotFoundException(item.productId));
+                        }
+                    }
+
+                    // Release stock for all items
+                    List<Uni<Product>> updates = items.stream()
+                            .map(item -> {
+                                Product p = productMap.get(item.productId);
+                                Product updated = new Product(
+                                        p.getName(), 
+                                        p.getKeycloakId(), 
+                                        p.getPrice(), 
+                                        p.getDescription(),
+                                        p.getStock() + item.quantity); // Add back the quantity
+                                updated.id = p.id; // Preserve the ObjectId
+                                return productRepository.update(updated);
+                            })
+                            .toList();
+                    
+                    return Uni.combine().all().unis(updates).discardItems();
+                });
+    }
+
     private Uni<List<ProductResponse>> enrichWithVendorInfo(List<Product> products) {
         if (products.isEmpty()) {
             return Uni.createFrom().item(List.of());
         }
 
-        // Get unique oauth IDs to avoid duplicate vendor requests
-        List<Integer> uniqueOauthIds = products.stream()
-                .map(Product::getOauthId)
+        // Get unique keycloak IDs to avoid duplicate vendor requests
+        List<String> uniqueKeycloakIds = products.stream()
+                .map(Product::getKeycloakId)
                 .distinct()
                 .collect(Collectors.toList());
 
-        LOG.infof("Found %d unique vendors for %d products", uniqueOauthIds.size(), products.size());
+        LOG.infof("Found %d unique vendors for %d products", uniqueKeycloakIds.size(), products.size());
 
         // Fetch all vendors concurrently
-        List<Uni<VendorDTO>> vendorUnis = uniqueOauthIds.stream()
-                .map(oauthId -> vendorClientService.getVendorByOauthId(oauthId)
+        List<Uni<VendorDTO>> vendorUnis = uniqueKeycloakIds.stream()
+                .map(keycloakId -> vendorClientService.getVendorByKeycloakId(keycloakId)
                         .onFailure().recoverWithItem(() -> {
-                            LOG.warnf("Failed to fetch vendor for oauthId=%d, continuing without vendor info", oauthId);
+                            LOG.warnf("Failed to fetch vendor for keycloakId=%s, continuing without vendor info",
+                                    keycloakId);
                             return null;
                         }))
                 .collect(Collectors.toList());
 
         return Uni.combine().all().unis(vendorUnis)
                 .combinedWith(vendorList -> {
-                    // Create a map of oauthId -> VendorDTO for quick lookup
-                    Map<Integer, VendorDTO> vendorMap = new HashMap<>();
-                    for (int i = 0; i < uniqueOauthIds.size(); i++) {
+                    // Create a map of keycloakId -> VendorDTO for quick lookup
+                    Map<String, VendorDTO> vendorMap = new HashMap<>();
+                    for (int i = 0; i < uniqueKeycloakIds.size(); i++) {
                         VendorDTO vendor = (VendorDTO) vendorList.get(i);
                         if (vendor != null) {
-                            vendorMap.put(uniqueOauthIds.get(i), vendor);
+                            vendorMap.put(uniqueKeycloakIds.get(i), vendor);
                         }
                     }
 
                     // Create ProductResponse objects with vendor information
                     return products.stream()
                             .map(product -> {
-                                VendorDTO vendor = vendorMap.get(product.getOauthId());
+                                VendorDTO vendor = vendorMap.get(product.getKeycloakId());
                                 if (vendor != null) {
                                     LOG.debugf("Set vendor info for product %s", product.getProductId());
                                 } else {
-                                    LOG.warnf("No vendor info available for product %s (oauthId=%d)",
-                                            product.getProductId(), product.getOauthId());
+                                    LOG.warnf("No vendor info available for product %s (keycloakId=%s)",
+                                            product.getProductId(), product.getKeycloakId());
                                 }
-                                return ProductResponse.from(product, vendor);
+                                return new ProductResponse(product, vendor);
                             })
                             .collect(Collectors.toList());
                 });

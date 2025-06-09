@@ -1,18 +1,18 @@
 package dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class ReserveStockItem {
-    @JsonProperty("product_id")
-    public String productId;
-    
-    @JsonProperty("quantity")
+    public String productId; // Changed from int to String
     public int quantity;
-    
+
     public ReserveStockItem() {}
-    
-    public ReserveStockItem(String productId, int quantity) {
+
+    public ReserveStockItem(String productId, int quantity) { // Changed parameter type
         this.productId = productId;
         this.quantity = quantity;
+    }
+
+    @Override
+    public String toString() {
+        return "ReserveStockItem{productId='" + productId + "', quantity=" + quantity + "}";
     }
 }

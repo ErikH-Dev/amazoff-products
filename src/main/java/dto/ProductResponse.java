@@ -5,11 +5,11 @@ import entities.Product;
 
 public class ProductResponse {
     @JsonProperty("product_id")
-    public String productId; // Changed from int to String
+    public String productId;
 
-    @JsonProperty("oauth_id")
-    public int oauthId;
-    
+    @JsonProperty("keycloak_id")
+    public String keycloakId;
+
     @JsonProperty("vendor")
     public VendorDTO vendor;
 
@@ -28,17 +28,12 @@ public class ProductResponse {
     public ProductResponse() {}
 
     public ProductResponse(Product product, VendorDTO vendor) {
-        this.productId = product.getProductId(); // Now returns String
-        this.oauthId = product.oauthId;
+        this.productId = product.getProductId();
+        this.keycloakId = product.keycloakId;
         this.vendor = vendor;
         this.name = product.name;
         this.price = product.price;
         this.description = product.description;
         this.stock = product.stock;
-    }
-
-    // Static factory method for easy creation
-    public static ProductResponse from(Product product, VendorDTO vendor) {
-        return new ProductResponse(product, vendor);
     }
 }

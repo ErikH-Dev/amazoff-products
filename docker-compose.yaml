@@ -32,19 +32,6 @@ services:
     networks:
       - amazoff-network
 
-  kibana:
-    image: kibana:8.11.0
-    container_name: amazoff-kibana
-    restart: unless-stopped
-    ports:
-      - "5601:5601"
-    environment:
-      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
-    depends_on:
-      - elasticsearch
-    networks:
-      - amazoff-network
-
 volumes:
   amazoff_mongo_data:
     driver: local

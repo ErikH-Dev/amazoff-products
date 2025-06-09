@@ -27,28 +27,28 @@ public class VendorClientService {
     @Channel("get-vendor-requests")
     Emitter<JsonObject> requestEmitter;
 
-    private final ConcurrentHashMap<Integer, CompletableFuture<VendorDTO>> pendingRequests = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CompletableFuture<VendorDTO>> pendingRequests = new ConcurrentHashMap<>();
 
-public Uni<VendorDTO> getVendorByOauthId(int oauthId) {
-    LOG.infof("Requesting vendor details for oauthId=%d", oauthId);
+public Uni<VendorDTO> getVendorByKeycloakId(String keycloakId) {
+    LOG.infof("Requesting vendor details for keycloakId=%s", keycloakId);
     CompletableFuture<VendorDTO> future = new CompletableFuture<>();
-    pendingRequests.put(oauthId, future);
-    JsonObject requestJson = new JsonObject().put("oauthId", oauthId);
-    
+    pendingRequests.put(keycloakId, future);
+    JsonObject requestJson = new JsonObject().put("keycloakId", keycloakId);
+
     try {
         requestEmitter.send(requestJson);
     } catch (Exception e) {
         LOG.errorf("Failed to send vendor request: %s", e.getMessage());
-        pendingRequests.remove(oauthId);
+        pendingRequests.remove(keycloakId);
         return Uni.createFrom().failure(e);
     }
 
     return Uni.createFrom().completionStage(future)
-            .ifNoItem().after(Duration.ofSeconds(10)).failWith(new RuntimeException("Timeout waiting for vendor response for oauthId=" + oauthId))
+            .ifNoItem().after(Duration.ofSeconds(10)).failWith(new RuntimeException("Timeout waiting for vendor response for keycloakId=" + keycloakId))
             .onFailure().invoke(e -> {
                 // Clean up pending request on timeout or failure
-                pendingRequests.remove(oauthId);
-                LOG.errorf("Failed to get vendor for oauthId=%d: %s", oauthId, e.getMessage());
+                pendingRequests.remove(keycloakId);
+                LOG.errorf("Failed to get vendor for keycloakId=%s: %s", keycloakId, e.getMessage());
             });
 }
 
@@ -59,13 +59,13 @@ public Uni<VendorDTO> getVendorByOauthId(int oauthId) {
 
         // Check if this is an error response
         if (json.getBoolean("error", false)) {
-            int oauthId = json.getInteger("oauthId");
+            String keycloakId = json.getString("keycloakId");
             String errorMessage = json.getString("message", "Unknown error");
-            LOG.warnf("Received error response for oauthId=%d: %s", oauthId, errorMessage);
+            LOG.warnf("Received error response for keycloakId=%s: %s", keycloakId, errorMessage);
 
-            CompletableFuture<VendorDTO> future = pendingRequests.remove(oauthId);
+            CompletableFuture<VendorDTO> future = pendingRequests.remove(keycloakId);
             if (future != null) {
-                future.completeExceptionally(new VendorNotFoundException(oauthId));
+                future.completeExceptionally(new VendorNotFoundException(keycloakId));
             }
             return Uni.createFrom().completionStage(message.ack()).replaceWithVoid();
         }
@@ -78,8 +78,8 @@ public Uni<VendorDTO> getVendorByOauthId(int oauthId) {
             return Uni.createFrom().completionStage(message.ack()).replaceWithVoid();
         }
 
-        int oauthId = vendor.getOauthId();
-        CompletableFuture<VendorDTO> future = pendingRequests.remove(oauthId);
+        String keycloakId = vendor.getKeycloakId();
+        CompletableFuture<VendorDTO> future = pendingRequests.remove(keycloakId);
         if (future != null) {
             future.complete(vendor);
         }

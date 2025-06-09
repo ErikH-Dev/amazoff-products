@@ -3,25 +3,25 @@ package dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class VendorDTO {
-    @JsonProperty("oauth_id")
-    private int oauthId;
+    @JsonProperty("keycloak_id")
+    private String keycloakId;
 
     @JsonProperty("store_name")
     private String storeName;
 
     public VendorDTO() {}
 
-    public VendorDTO(int oauthId, String storeName) {
-        this.oauthId = oauthId;
+    public VendorDTO(String keycloakId, String storeName) {
+        this.keycloakId = keycloakId;
         this.storeName = storeName;
     }
 
-    public int getOauthId() {
-        return oauthId;
+    public String getKeycloakId() {
+        return keycloakId;
     }
 
-    public void setOauthId(int oauthId) {
-        this.oauthId = oauthId;
+    public void setKeycloakId(String keycloakId) {
+        this.keycloakId = keycloakId;
     }
 
     public String getStoreName() {

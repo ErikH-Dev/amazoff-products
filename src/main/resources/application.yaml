@@ -37,11 +37,17 @@ mp:
           declare: true
         routing-key: product.sync
         
+      release-stock-responses:
+        connector: smallrye-rabbitmq
+      get-products-responses:
+        connector: smallrye-rabbitmq
     incoming:
       get-vendor-responses:
         connector: smallrye-rabbitmq
+        auto-acknowledgment: true
       reserve-stock-requests:
         connector: smallrye-rabbitmq
+        auto-acknowledgment: true
       # Add product sync for Elasticsearch updates
       product-sync:
         connector: smallrye-rabbitmq
@@ -55,6 +61,13 @@ mp:
           durable: true
           declare: true
         routing-key: product.sync
+        auto-acknowledgment: true
+      release-stock-requests:
+        connector: smallrye-rabbitmq
+        auto-acknowledgment: true
+      get-products-requests:
+        connector: smallrye-rabbitmq
+        auto-acknowledgment: true
 
     # Global RabbitMQ connector configuration with environment variable overrides
     connector:

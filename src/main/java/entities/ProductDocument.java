@@ -6,8 +6,8 @@ public class ProductDocument {
     @JsonProperty("product_id")
     public String productId;
 
-    @JsonProperty("oauth_id")
-    public int oauthId;
+    @JsonProperty("keycloak_id")
+    public String keycloakId;
 
     @JsonProperty("name")
     public String name;
@@ -25,7 +25,7 @@ public class ProductDocument {
 
     public ProductDocument(Product product) {
         this.productId = product.getProductId();
-        this.oauthId = product.oauthId;
+        this.keycloakId = product.keycloakId;
         this.name = product.name;
         this.price = product.price;
         this.description = product.description;
@@ -34,7 +34,7 @@ public class ProductDocument {
 
     public Product toProduct() {
         Product product = new Product();
-        product.oauthId = this.oauthId;
+        product.keycloakId = this.keycloakId;
         product.name = this.name;
         product.price = this.price;
         product.description = this.description;

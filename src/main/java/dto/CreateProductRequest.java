@@ -10,10 +10,6 @@ import jakarta.validation.constraints.Size;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CreateProductRequest {
-    @JsonProperty("oauth_id")
-    @NotNull(message = "OAuth ID must not be null")
-    public int oauth_id;
-
     @NotBlank(message = "Name must not be blank")
     @Size(max = 100, message = "Name must not exceed 100 characters")
     @JsonProperty("name")

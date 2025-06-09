@@ -2,12 +2,12 @@ package dto;
 
 import java.util.List;
 
-public class ReserveStockRequest {
+public class ReleaseStockRequest {
     public List<ReserveStockItem> items;
 
-    public ReserveStockRequest() {}
+    public ReleaseStockRequest() {}
 
-    public ReserveStockRequest(List<ReserveStockItem> items) {
+    public ReleaseStockRequest(List<ReserveStockItem> items) {
         this.items = items;
     }
 
@@ -17,5 +17,12 @@ public class ReserveStockRequest {
 
     public void setItems(List<ReserveStockItem> items) {
         this.items = items;
+    }
+
+    @Override
+    public String toString() {
+        return "ReleaseStockRequest{" +
+                "items=" + items +
+                '}';
     }
 }

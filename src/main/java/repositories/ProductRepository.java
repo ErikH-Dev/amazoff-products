@@ -41,7 +41,6 @@ public class ProductRepository implements IProductRepository {
     @Override
     public Uni<List<Product>> readByIds(List<String> ids) {
         LOG.debugf("Fetching products by IDs from MongoDB: %s", ids);
-        // Convert String IDs to ObjectIds
         List<ObjectId> objectIds = ids.stream()
             .map(ObjectId::new)
             .toList();
@@ -70,13 +69,12 @@ public class ProductRepository implements IProductRepository {
         return Product.<Product>findById(product.id)
             .onItem().ifNull().failWith(() -> new ProductNotFoundException(product.getProductId()))
             .onItem().ifNotNull().transformToUni(existingProduct -> {
-                // Update fields
                 existingProduct.name = product.name;
                 existingProduct.price = product.price;
                 existingProduct.description = product.description;
                 existingProduct.stock = product.stock;
-                existingProduct.oauthId = product.oauthId;
-                
+                existingProduct.keycloakId = product.keycloakId;
+
                 return existingProduct.update()
                     .map(updated -> existingProduct);
             })
@@ -93,19 +91,18 @@ public class ProductRepository implements IProductRepository {
             .replaceWithVoid();
     }
 
-    // Additional MongoDB-specific methods
     public Uni<Product> findByObjectId(ObjectId id) {
         LOG.debugf("Fetching product by ObjectId from MongoDB: %s", id);
         return Product.<Product>findById(id)
             .onItem().ifNull().failWith(() -> new ProductNotFoundException(id.toString()));
     }
 
-    public Uni<List<Product>> findByVendor(int oauthId) {
-        LOG.debugf("Fetching products by vendor from MongoDB: oauthId=%d", oauthId);
-        return Product.<Product>find("oauthId", oauthId).list();
+    public Uni<List<Product>> findByVendor(String keycloakId) {
+        LOG.debugf("Fetching products by vendor from MongoDB: keycloakId=%s", keycloakId);
+        return Product.<Product>find("keycloakId", keycloakId).list();
     }
 
-    public Uni<Long> countByVendor(int oauthId) {
-        return Product.count("oauthId", oauthId);
+    public Uni<Long> countByVendor(String keycloakId) {
+        return Product.count("keycloakId", keycloakId);
     }
 }
