@@ -8,10 +8,8 @@ import java.util.stream.Collectors;
 import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 
-import dto.CreateProductRequest;
 import dto.ProductResponse;
 import dto.ReserveStockItem;
-import dto.UpdateProductRequest;
 import dto.VendorDTO;
 import entities.Product;
 import entities.ProductDocument;
