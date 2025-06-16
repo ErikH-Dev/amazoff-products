@@ -80,9 +80,8 @@ public class ProductService implements IProductService {
                 .onItem().ifNull().failWith(new ProductNotFoundException(id))
                 .onItem().invoke(product -> LOG.infof("Product read: productId=%s", product.getProductId()))
                 .onFailure().invoke(e -> LOG.errorf("Failed to read product: %s", e.getMessage()))
-                .onItem().transformToUni(product -> 
-                    vendorClientService.getVendorByKeycloakId(product.getKeycloakId())
-                            .onItem().transform(vendor -> new ProductResponse(product, vendor)))
+                .onItem().transformToUni(product -> vendorClientService.getVendorByKeycloakId(product.getKeycloakId())
+                        .onItem().transform(vendor -> new ProductResponse(product, vendor)))
                 .eventually(() -> {
                     MDC.remove("productId");
                     return Uni.createFrom().voidItem();
@@ -125,9 +124,9 @@ public class ProductService implements IProductService {
                                 eventPublisher.publishProductUpdated(updated);
                                 LOG.infof("Product updated: productId=%s", updated.getProductId());
                             })
-                            .onItem().transformToUni(updated -> 
-                                vendorClientService.getVendorByKeycloakId(updated.getKeycloakId())
-                                        .onItem().transform(vendor -> new ProductResponse(updated, vendor)));
+                            .onItem().transformToUni(
+                                    updated -> vendorClientService.getVendorByKeycloakId(updated.getKeycloakId())
+                                            .onItem().transform(vendor -> new ProductResponse(updated, vendor)));
                 })
                 .onFailure().invoke(e -> LOG.errorf("Failed to update product: %s", e.getMessage()))
                 .eventually(() -> {
@@ -181,16 +180,19 @@ public class ProductService implements IProductService {
                             .map(item -> {
                                 Product p = productMap.get(item.productId);
                                 Product updated = new Product(
-                                        p.getName(), 
-                                        p.getKeycloakId(), 
-                                        p.getPrice(), 
+                                        p.getName(),
+                                        p.getKeycloakId(),
+                                        p.getPrice(),
                                         p.getDescription(),
                                         p.getStock() - item.quantity);
-                                updated.id = p.id; // Preserve the ObjectId
-                                return productRepository.update(updated);
+                                updated.id = p.id;
+                                return productRepository.update(updated)
+                                        .onItem().invoke(updatedProduct -> {
+                                            eventPublisher.publishProductUpdated(updatedProduct);
+                                        });
                             })
                             .toList();
-                    
+
                     return Uni.combine().all().unis(updates).discardItems();
                 });
     }
@@ -230,17 +232,20 @@ public class ProductService implements IProductService {
                             .map(item -> {
                                 Product p = productMap.get(item.productId);
                                 Product updated = new Product(
-                                        p.getName(), 
-                                        p.getKeycloakId(), 
-                                        p.getPrice(), 
+                                        p.getName(),
+                                        p.getKeycloakId(),
+                                        p.getPrice(),
                                         p.getDescription(),
                                         p.getStock() + item.quantity); // Add back the quantity
-                                updated.id = p.id; // Preserve the ObjectId
-                                return productRepository.update(updated);
-                            })
-                            .toList();
-                    
-                    return Uni.combine().all().unis(updates).discardItems();
+                                updated.id = p.id;
+                            return productRepository.update(updated)
+                                .onItem().invoke(updatedProduct -> {
+                                    eventPublisher.publishProductUpdated(updatedProduct);
+                                });
+                        })
+                        .toList();
+
+                return Uni.combine().all().unis(updates).discardItems();
                 });
     }
 
