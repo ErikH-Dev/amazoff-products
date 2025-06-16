@@ -140,7 +140,14 @@ public class ProductController {
                 productRequest.stock);
         MDC.put("productId", productRequest.id);
         LOG.infof("Received updateProduct request: productId=%s, keycloakId=%s", productRequest.id, keycloakId);
-        return productService.update(product)
+        return productService.read(productRequest.id)
+                .onItem().ifNull().failWith(new NotFoundException("Product not found"))
+                .onItem().invoke(existingProduct -> {
+                    if (!existingProduct.keycloakId.equals(keycloakId)) {
+                        throw new ForbiddenException("You do not have permission to update this product");
+                    }
+                })
+                .onItem().transformToUni(existingProduct -> productService.update(product))
                 .onItem().invoke(updatedProduct -> LOG.infof("Product updated: productId=%s", updatedProduct.productId))
                 .onItem().transform(updatedProduct -> Response.ok(updatedProduct).build())
                 .onFailure().invoke(e -> LOG.errorf("Failed to update product: %s", e.getMessage()))
