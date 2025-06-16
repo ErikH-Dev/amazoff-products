@@ -7,6 +7,8 @@ import co.elastic.clients.elasticsearch.core.IndexRequest;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import entities.ProductDocument;
+import exceptions.errors.*;
+import exceptions.errors.ProductSearchException;
 import interfaces.IProductSearchRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -38,7 +40,7 @@ public class ProductSearchRepository implements IProductSearchRepository {
                 return null;
             } catch (Exception e) {
                 LOG.errorf("Failed to index product %s: %s", product.productId, e.getMessage());
-                throw new RuntimeException(e);
+                throw new ProductIndexException("Failed to index product " + product.productId, e);
             }
         });
     }
@@ -58,13 +60,19 @@ public class ProductSearchRepository implements IProductSearchRepository {
 
                 SearchResponse<ProductDocument> response = elasticsearchClient.search(request, ProductDocument.class);
 
-                return response.hits().hits().stream()
+                List<ProductDocument> results = response.hits().hits().stream()
                         .map(hit -> hit.source())
                         .collect(Collectors.toList());
 
+                if (results.isEmpty()) {
+                    LOG.warnf("No products found for query '%s'", query);
+                }
+
+                return results;
+
             } catch (Exception e) {
                 LOG.errorf("Search failed for query '%s': %s", query, e.getMessage());
-                throw new RuntimeException(e);
+                throw new ProductSearchException("Search failed for query: " + query);
             }
         });
     }
@@ -82,7 +90,7 @@ public class ProductSearchRepository implements IProductSearchRepository {
                 return null;
             } catch (Exception e) {
                 LOG.errorf("Failed to delete product %s from Elasticsearch: %s", productId, e.getMessage());
-                throw new RuntimeException(e);
+                throw new ProductDeleteException("Failed to delete product " + productId, e);
             }
         });
     }

@@ -111,6 +111,19 @@ public class ProductController {
                 .onFailure().invoke(e -> LOG.errorf("Failed to search products: %s", e.getMessage()));
     }
 
+    @GET
+    @Path("/vendor")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("vendor")
+    public Uni<Response> getVendorProducts() {
+        String keycloakId = jwtUtil.getCurrentKeycloakUserId();
+        LOG.infof("Received getVendorProducts request: keycloakId=%s", keycloakId);
+        return productService.readByVendorId(keycloakId)
+                .onItem().invoke(products -> LOG.infof("Vendor products retrieved: count=%d", products.size()))
+                .onItem().transform(products -> Response.ok(products).build())
+                .onFailure().invoke(e -> LOG.errorf("Failed to get vendor products: %s", e.getMessage()));
+    }
+
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)

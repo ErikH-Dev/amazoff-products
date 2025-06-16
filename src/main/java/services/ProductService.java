@@ -196,6 +196,16 @@ public class ProductService implements IProductService {
     }
 
     @Override
+    public Uni<List<ProductResponse>> readByVendorId(String vendorId) {
+        LOG.infof("Reading products by vendorId: %s", vendorId);
+        return productRepository.readByVendorId(vendorId)
+                .onItem().invoke(products -> LOG.infof("Read %d products for vendorId=%s", products.size(), vendorId))
+                .onFailure().invoke(e -> LOG.errorf("Failed to read products by vendorId: %s", e.getMessage()))
+                .onItem().transformToUni(this::enrichWithVendorInfo)
+                .onFailure().recoverWithItem(List.of());
+    }
+
+    @Override
     public Uni<Void> releaseProductStocks(List<ReserveStockItem> items) {
         LOG.infof("Releasing stock for items: %s", items);
         List<String> ids = items.stream().map(i -> i.productId).toList();

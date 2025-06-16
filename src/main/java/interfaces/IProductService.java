@@ -15,6 +15,7 @@ public interface IProductService {
     Uni<List<ProductResponse>> readByIds(List<String> ids);
     Uni<ProductResponse> read(String id);
     Uni<List<ProductResponse>> searchProducts(String query);
+    Uni<List<ProductResponse>> readByVendorId(String vendorId);
     Uni<ProductResponse> update(Product product);
     Uni<Void> reserveProductStocks(List<ReserveStockItem> items);
     Uni<Void> releaseProductStocks(List<ReserveStockItem> items);

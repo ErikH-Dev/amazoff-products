@@ -11,6 +11,7 @@ public interface IProductRepository {
     Uni<List<Product>> readAll();
     Uni<List<Product>> readByIds(List<String> ids);
     Uni<Product> read(String id);
+    Uni<List<Product>> readByVendorId(String vendorId);
     Uni<Product> update(Product product);
     Uni<Void> delete(String id);
 

@@ -64,6 +64,17 @@ public class ProductRepository implements IProductRepository {
     }
 
     @Override
+    public Uni<List<Product>> readByVendorId(String vendorId) {
+        LOG.debugf("Fetching products by Vendor ID from MongoDB: vendorId=%s", vendorId);
+        return Product.<Product>find("vendorId", vendorId).list()
+            .onItem().invoke(list -> LOG.debugf("Fetched %d products by Vendor ID from MongoDB", list.size()))
+            .onFailure().invoke(e -> {
+                LOG.errorf("Failed to retrieve products by Vendor ID from MongoDB: %s", e.getMessage());
+                throw new RuntimeException("Failed to retrieve products by Vendor ID: " + e.getMessage(), e);
+            });
+    }
+
+    @Override
     public Uni<Product> update(Product product) {
         LOG.debugf("Updating product in MongoDB: productId=%s", product.getProductId());
         return Product.<Product>findById(product.id)
