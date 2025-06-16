@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Size;
 
 public class UpdateProductRequest {
     @NotNull(message = "Product ID must not be null")
-    @JsonProperty("id")
+    @JsonProperty("product_id")
     public String id;
 
     @NotBlank(message = "Name must not be blank")
